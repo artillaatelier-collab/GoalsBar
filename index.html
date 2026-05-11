@@ -1287,9 +1287,9 @@ function connectWS() {
       subscribe(sessionId);
     }
 
-    if (msg.metadata.message_type === "notification") {
+   if (msg.metadata.message_type === "notification") {
       if (msg.metadata.subscription_type === "channel.follow") {
-        fetchFollowers();
+        fetchFollowerCount(); // 修正為正確的函數名稱
       }
     }
   };
