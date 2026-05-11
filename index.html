@@ -3,53 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
   <title>Twitch Follower Goal Overlay</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-    rel="stylesheet"
-  >
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-  /* 調整為你的圖片寬高比例 */
       --overlay-width: 800px;
       --overlay-height: 80px;
-
-  /* 指向你剛才存的圖片檔名 */
-      --bg-image: url('./bg-overlay.png'); 
-
-      --overlay-bg: rgba(12,12,18,0.72); /* 介面保留，但 overlay 將不再使用 */
+      --bg-image: url('./bg-overlay.png');
+      --overlay-bg: rgba(12,12,18,0.72);
       --text-color: #ffffff;
       --progress-color: linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%);
-     }
-
-    * {
-      box-sizing: border-box;
     }
 
-    html,
-    body {
+    * { box-sizing: border-box; }
+
+    html, body {
       margin: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
-
       font-family: "Inter", sans-serif;
     }
 
-    body {
-      background: transparent;
-    }
+    body { background: transparent; }
 
-   /* =========================
-        OVERLAY
-    ========================== */
-
+    /* ── OVERLAY ── */
     .overlay-wrap {
       width: 100%;
       height: 100%;
@@ -62,13 +44,10 @@
       position: relative;
       width: var(--overlay-width);
       height: var(--overlay-height);
-      
-      /* 套用自定義圖片為背景 */
       background-image: var(--bg-image);
       background-size: 100% 100%;
       background-position: center;
       background-repeat: no-repeat;
-
       background-color: transparent;
       border: none;
       box-shadow: none;
@@ -76,7 +55,6 @@
       border-radius: 0;
     }
 
-    /* 🌟 魔法遮罩：用 clip-path 剪出原本背景的「圓形徽章」，蓋在進度條上面 */
     .overlay::after {
       content: "";
       position: absolute;
@@ -84,27 +62,20 @@
       background-image: var(--bg-image);
       background-size: 100% 100%;
       background-position: center;
-      
-      z-index: 2; /* 確保它在進度條（z-index:1）的上方 */
-      /* 這個數值代表：剪出一個半徑 42px 的圓，圓心在 X:40px, Y:40px。可依圖片微調 */
+      z-index: 2;
       clip-path: circle(42px at 25px 40px);
       pointer-events: none;
     }
 
     .progress-track {
       position: absolute;
-      
-      /* 讓進度條從徽章的「圓心」開始，這樣露出來的部分就會像從底下鑽出來的 */
-      left: 40px; 
-      
-      /* 這些數值是為了讓進度條「縮進」灰色內框中，請根據圖片邊界微調 */
-      right: 12px; 
-      top: 18px;   
+      left: 40px;
+      right: 12px;
+      top: 18px;
       bottom: 18px;
-      
-      border-radius: 4px; 
+      border-radius: 4px;
       overflow: hidden;
-      z-index: 1; /* 夾在底圖(0)跟徽章遮罩(2)的中間 */
+      z-index: 1;
     }
 
     .progress-fill {
@@ -112,21 +83,19 @@
       left: 0;
       top: 0;
       height: 100%;
-      width: 0%; /* 這個會被 JS 自動控制 */
+      width: 0%;
       background: var(--progress-color);
       transition: width 0.9s cubic-bezier(0.22,1,0.36,1);
     }
 
-    /* 文字排版：確保 z-index 最高，且左邊推開距離避開徽章 */
     .content {
       position: relative;
-      z-index: 3; /* 最頂層，不會被徽章或進度條蓋住 */
+      z-index: 3;
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      
-      padding-left: 95px; /* 把文字往右推，避開徽章 */
+      padding-left: 95px;
       padding-right: 24px;
     }
 
@@ -159,106 +128,63 @@
       text-shadow: 0 2px 6px rgba(0,0,0,0.9);
     }
 
-    .left {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+    /* ── STATUS DOT (OBS debug helper) ── */
+    #statusDot {
+      position: fixed;
+      bottom: 8px;
+      right: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.55);
+      font-family: "Inter", monospace;
+      z-index: 9999;
+      pointer-events: none;
+      transition: opacity 0.4s;
     }
 
-    .label {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-color);
-      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
-    }
+    body.obs-mode #statusDot { display: none; }
 
-    .goal-text {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text-color);
-      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
-    }
-
-    .percent {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text-color);
-      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
-    }
-
-    /* =========================
-        SETTINGS PANEL
-    ========================== */
-
+    /* ── SETTINGS PANEL ── */
     .settings {
       position: fixed;
-
       top: 20px;
       right: 20px;
-
       width: 340px;
       max-height: calc(100vh - 40px);
-
       overflow-y: auto;
-
-      background:
-        rgba(18,18,22,0.92);
-
-      border:
-        1px solid rgba(255,255,255,0.08);
-
+      background: rgba(18,18,22,0.92);
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 20px;
-
       padding: 18px;
-
       backdrop-filter: blur(16px);
-
-      box-shadow:
-        0 10px 30px rgba(0,0,0,0.35);
-
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
       z-index: 9999;
     }
 
     .settings h2 {
       margin: 0 0 16px;
-
       font-size: 18px;
       color: white;
     }
 
-    .field {
-      margin-bottom: 14px;
-    }
+    .field { margin-bottom: 14px; }
 
     .field label {
       display: block;
-
       margin-bottom: 6px;
-
       font-size: 12px;
       font-weight: 600;
-
-      color:
-        rgba(255,255,255,0.7);
+      color: rgba(255,255,255,0.7);
     }
 
     .field input {
       width: 100%;
-
       border: none;
       outline: none;
-
       padding: 11px 12px;
-
       border-radius: 12px;
-
-      background:
-        rgba(255,255,255,0.08);
-
+      background: rgba(255,255,255,0.08);
       color: white;
-
       font-size: 14px;
       font-family: inherit;
     }
@@ -269,10 +195,7 @@
       accent-color: #f472b6;
     }
 
-    .row {
-      display: flex;
-      gap: 10px;
-    }
+    .row { display: flex; gap: 10px; }
 
     .color-row {
       display: flex;
@@ -285,43 +208,30 @@
       min-width: 0;
     }
 
-    .hex-input {
-      margin-top: 10px;
-      text-transform: uppercase;
-    }
+    .hex-input { margin-top: 10px; text-transform: uppercase; }
 
     .picker-panel {
       position: relative;
-
       width: 100%;
       height: 148px;
-
       border-radius: 16px;
       overflow: hidden;
-
       cursor: crosshair;
-
       background-color: rgb(255, 0, 0);
       background-image:
         linear-gradient(to top, black, transparent),
         linear-gradient(to right, white, transparent);
-
       border: 1px solid rgba(255,255,255,0.08);
     }
 
     .picker-thumb {
       position: absolute;
-
       width: 22px;
       height: 22px;
-
       border: 3px solid white;
       border-radius: 50%;
-
       box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-
       transform: translate(-50%, -50%);
-
       pointer-events: none;
     }
 
@@ -329,13 +239,11 @@
       display: flex;
       align-items: center;
       gap: 10px;
-
       margin-top: 10px;
     }
 
     .picker-meta label {
       margin: 0;
-
       font-size: 12px;
       color: rgba(255,255,255,0.65);
     }
@@ -343,73 +251,54 @@
     .hue-slider {
       flex: 1;
       height: 14px;
-
       appearance: none;
       -webkit-appearance: none;
-
       border-radius: 999px;
       outline: none;
       background: transparent;
       --hue-gradient: linear-gradient(
         90deg,
-        #ff0000 0%,
-        #ffff00 16.66%,
-        #00ff00 33.33%,
-        #00ffff 50%,
-        #0000ff 66.66%,
-        #ff00ff 83.33%,
-        #ff0000 100%
+        #ff0000 0%, #ffff00 16.66%, #00ff00 33.33%,
+        #00ffff 50%, #0000ff 66.66%, #ff00ff 83.33%, #ff0000 100%
       );
     }
 
     .hue-slider::-webkit-slider-runnable-track {
       height: 14px;
-
       border-radius: 999px;
-
       background: var(--hue-gradient);
     }
 
     .hue-slider::-moz-range-track {
       height: 14px;
-
       border-radius: 999px;
       border: none;
-
       background: var(--hue-gradient);
     }
 
     .hue-slider::-webkit-slider-thumb {
       appearance: none;
-
       width: 20px;
       height: 20px;
-
       border: 3px solid white;
       border-radius: 50%;
-
       background: var(--hue-color, #ff0000);
       box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-
       cursor: pointer;
     }
 
     .hue-slider::-moz-range-thumb {
       width: 20px;
       height: 20px;
-
       border: 3px solid white;
       border-radius: 50%;
-
       background: var(--hue-color, #ff0000);
       box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-
       cursor: pointer;
     }
 
     .hue-value {
       min-width: 48px;
-
       text-align: right;
       font-size: 12px;
       color: rgba(255,255,255,0.7);
@@ -419,7 +308,6 @@
       display: flex;
       justify-content: space-between;
       gap: 10px;
-
       margin-top: 8px;
     }
 
@@ -442,12 +330,9 @@
     .color-chip {
       width: 42px;
       height: 42px;
-
       flex: 0 0 42px;
-
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,0.12);
-
       background-image:
         linear-gradient(45deg, rgba(255,255,255,0.08) 25%, transparent 25%),
         linear-gradient(-45deg, rgba(255,255,255,0.08) 25%, transparent 25%),
@@ -455,29 +340,19 @@
         linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.08) 75%);
       background-size: 16px 16px;
       background-position: 0 0, 0 8px, 8px -8px, -8px 0;
-
       overflow: hidden;
     }
 
     .color-chip::after {
       content: "";
-
       display: block;
       width: 100%;
       height: 100%;
-
       background: var(--chip-color, transparent);
-    }
-
-    .range-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
 
     .range-wrap output {
       min-width: 44px;
-
       text-align: right;
       font-size: 12px;
       color: rgba(255,255,255,0.7);
@@ -485,99 +360,62 @@
 
     .btn {
       width: 100%;
-
       border: none;
       cursor: pointer;
-
       margin-top: 10px;
-
       padding: 13px;
-
       border-radius: 14px;
-
       font-weight: 700;
       font-size: 14px;
-
       color: white;
-
-      background:
-        linear-gradient(
-          90deg,
-          #8b5cf6,
-          #ec4899
-        );
+      background: linear-gradient(90deg, #8b5cf6, #ec4899);
     }
 
     .hint {
       margin-top: 14px;
-
       font-size: 11px;
       line-height: 1.5;
-
-      color:
-        rgba(255,255,255,0.5);
+      color: rgba(255,255,255,0.5);
     }
 
     .save-status {
       min-height: 18px;
-
       margin-top: 10px;
-
       font-size: 12px;
       color: rgba(255,255,255,0.75);
     }
 
     .toggle-btn {
       position: fixed;
-
       top: 20px;
       left: 20px;
-
       z-index: 10000;
-
       border: none;
       cursor: pointer;
-
       padding: 10px 14px;
-
       border-radius: 12px;
-
-      background:
-        rgba(20,20,25,0.85);
-
+      background: rgba(20,20,25,0.85);
       color: white;
-
       backdrop-filter: blur(12px);
     }
 
     body.ui-hidden .settings,
-    body.ui-hidden .toggle-btn {
-      display: none;
-    }
-
-    .hidden {
-      display: none;
-    }
+    body.ui-hidden .toggle-btn { display: none; }
 
     body.obs-mode .settings,
-    body.obs-mode .toggle-btn {
-      display: none;
-    }
+    body.obs-mode .toggle-btn { display: none; }
   </style>
 </head>
 
 <body>
 
-  <button
-    class="toggle-btn"
-    onclick="toggleSettings()"
-  >
-    ⚙ Settings
-  </button>
+  <button class="toggle-btn" onclick="toggleSettings()">⚙ Settings</button>
+
+  <!-- Status dot: visible outside OBS, hidden inside ?obs mode -->
+  <div id="statusDot">⏳ connecting…</div>
 
   <!-- SETTINGS -->
   <div class="settings" id="settingsPanel">
-
     <h2>Follower Goal Settings</h2>
 
     <div class="field">
@@ -586,12 +424,10 @@
     </div>
 
     <div class="row">
-
       <div class="field">
         <label>Goal</label>
         <input id="goalInput" type="number">
       </div>
-
     </div>
 
     <div class="field">
@@ -599,41 +435,25 @@
       <input id="suffixInput" type="text">
     </div>
 
+    <!-- Background Color -->
     <div class="field">
       <label>Background Color</label>
-
       <div class="color-row">
         <div class="color-chip" id="bgColorPreview"></div>
         <div class="color-control">
           <div class="picker-panel" id="bgColorPanel">
             <div class="picker-thumb" id="bgColorThumb"></div>
           </div>
-
           <div class="picker-meta">
             <label for="bgColorHueInput">Hue</label>
-            <input
-              class="hue-slider"
-              id="bgColorHueInput"
-              type="range"
-              min="0"
-              max="360"
-              step="1"
-            >
+            <input class="hue-slider" id="bgColorHueInput" type="range" min="0" max="360" step="1">
             <output class="hue-value" id="bgColorHueValue" for="bgColorHueInput"></output>
           </div>
-
           <div class="picker-readout">
             <span>S<output id="bgColorSaturationValue"></output></span>
             <span>B<output id="bgColorBrightnessValue"></output></span>
           </div>
-
-          <input
-            class="hex-input"
-            id="bgColorHexInput"
-            type="text"
-            maxlength="7"
-            placeholder="#0C0C12"
-          >
+          <input class="hex-input" id="bgColorHexInput" type="text" maxlength="7" placeholder="#0C0C12">
         </div>
       </div>
     </div>
@@ -641,17 +461,12 @@
     <div class="field">
       <label>Background Transparency</label>
       <div class="range-wrap">
-        <input
-          id="bgOpacityInput"
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-        >
+        <input id="bgOpacityInput" type="range" min="0" max="100" step="1">
         <output id="bgOpacityValue" for="bgOpacityInput"></output>
       </div>
     </div>
 
+    <!-- Text Color -->
     <div class="field">
       <label>Text Color</label>
       <div class="color-row">
@@ -660,36 +475,21 @@
           <div class="picker-panel" id="textColorPanel">
             <div class="picker-thumb" id="textColorThumb"></div>
           </div>
-
           <div class="picker-meta">
             <label for="textColorHueInput">Hue</label>
-            <input
-              class="hue-slider"
-              id="textColorHueInput"
-              type="range"
-              min="0"
-              max="360"
-              step="1"
-            >
+            <input class="hue-slider" id="textColorHueInput" type="range" min="0" max="360" step="1">
             <output class="hue-value" id="textColorHueValue" for="textColorHueInput"></output>
           </div>
-
           <div class="picker-readout">
             <span>S<output id="textColorSaturationValue"></output></span>
             <span>B<output id="textColorBrightnessValue"></output></span>
           </div>
-
-          <input
-            class="hex-input"
-            id="textColorHexInput"
-            type="text"
-            maxlength="7"
-            placeholder="#FFFFFF"
-          >
+          <input class="hex-input" id="textColorHexInput" type="text" maxlength="7" placeholder="#FFFFFF">
         </div>
       </div>
     </div>
 
+    <!-- Progress Start -->
     <div class="field">
       <label>Progress Start Color</label>
       <div class="color-row">
@@ -698,36 +498,21 @@
           <div class="picker-panel" id="progressStartPanel">
             <div class="picker-thumb" id="progressStartThumb"></div>
           </div>
-
           <div class="picker-meta">
             <label for="progressStartHueInput">Hue</label>
-            <input
-              class="hue-slider"
-              id="progressStartHueInput"
-              type="range"
-              min="0"
-              max="360"
-              step="1"
-            >
+            <input class="hue-slider" id="progressStartHueInput" type="range" min="0" max="360" step="1">
             <output class="hue-value" id="progressStartHueValue" for="progressStartHueInput"></output>
           </div>
-
           <div class="picker-readout">
             <span>S<output id="progressStartSaturationValue"></output></span>
             <span>B<output id="progressStartBrightnessValue"></output></span>
           </div>
-
-          <input
-            class="hex-input"
-            id="progressStartHexInput"
-            type="text"
-            maxlength="7"
-            placeholder="#8B5CF6"
-          >
+          <input class="hex-input" id="progressStartHexInput" type="text" maxlength="7" placeholder="#8B5CF6">
         </div>
       </div>
     </div>
 
+    <!-- Progress End -->
     <div class="field">
       <label>Progress End Color</label>
       <div class="color-row">
@@ -736,117 +521,61 @@
           <div class="picker-panel" id="progressEndPanel">
             <div class="picker-thumb" id="progressEndThumb"></div>
           </div>
-
           <div class="picker-meta">
             <label for="progressEndHueInput">Hue</label>
-            <input
-              class="hue-slider"
-              id="progressEndHueInput"
-              type="range"
-              min="0"
-              max="360"
-              step="1"
-            >
+            <input class="hue-slider" id="progressEndHueInput" type="range" min="0" max="360" step="1">
             <output class="hue-value" id="progressEndHueValue" for="progressEndHueInput"></output>
           </div>
-
           <div class="picker-readout">
             <span>S<output id="progressEndSaturationValue"></output></span>
             <span>B<output id="progressEndBrightnessValue"></output></span>
           </div>
-
-          <input
-            class="hex-input"
-            id="progressEndHexInput"
-            type="text"
-            maxlength="7"
-            placeholder="#EC4899"
-          >
+          <input class="hex-input" id="progressEndHexInput" type="text" maxlength="7" placeholder="#EC4899">
         </div>
       </div>
     </div>
 
-    <button
-      class="btn"
-      onclick="saveSettings()"
-    >
-      Save Overlay
-    </button>
-
+    <button class="btn" onclick="saveSettings()">Save Overlay</button>
     <div class="save-status" id="saveStatus" aria-live="polite"></div>
 
     <div class="hint">
-      All settings are saved automatically in browser.<br><br>
-
-      Press <b>F2</b> to hide or show the settings UI.<br><br>
-
-      Add <b>?obs</b> to URL in OBS Browser Source
-      to hide the settings panel.
+      All settings are saved in browser localStorage.<br><br>
+      Press <b>F2</b> to hide/show the settings panel.<br><br>
+      Add <b>?obs</b> to the URL in OBS Browser Source to hide the settings panel.<br><br>
+      The overlay polls your Cloudflare Worker every <b>30 seconds</b> automatically.
     </div>
-
   </div>
 
   <!-- OVERLAY -->
   <div class="overlay-wrap">
-
-<div class="overlay" id="overlay">
+    <div class="overlay" id="overlay">
       <div class="progress-track">
         <div class="progress-fill" id="progressFill"></div>
       </div>
-
       <div class="content">
         <div class="left">
           <div class="label" id="labelText"></div>
           <div class="goal-text" id="goalText"></div>
         </div>
         <div class="percent" id="percentText"></div>
-        
       </div>
-  
     </div>
-
   </div>
 
   <script>
 
     /* =========================
-        TWITCH 授權設定 (請在此處修改)
+        WORKER ENDPOINT
+        This is the only data source used — no OAuth, no WebSocket.
+        OBS Browser Source cannot do OAuth redirects, so we rely entirely
+        on the Cloudflare Worker which already returns the follower count.
     ========================== */
-    const TWITCH_CLIENT_ID = "1m5oe4pcm81nctep2f9rrzw3jhvv6i";
-    const REDIRECT_URI = window.location.origin + window.location.pathname;
 
-    const SCOPES = [
-    "moderator:read:followers",
-    "user:read:follows"
-    ].join(" ");
-    
-    function loginTwitch() {
-    const url =
-    "https://id.twitch.tv/oauth2/authorize" +
-    "?client_id=" + TWITCH_CLIENT_ID +
-    "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) +
-    "&response_type=token" +
-    "&scope=" + encodeURIComponent(SCOPES);
+    const WORKER_URL = "https://goals-bar.artillaatelier.workers.dev/";
 
-    window.location = url;
-  }
+    // How often to re-poll (ms). 30 s is polite; lower if your Worker can handle it.
+    const POLL_INTERVAL_MS = 30_000;
 
-  function getTokenFromHash() {
-  const hash = window.location.hash;
-  if (!hash.includes("access_token")) return null;
-
-  const params = new URLSearchParams(hash.replace("#", ""));
-  const token = params.get("access_token");
-
-  if (token) {
-    localStorage.setItem("twitch_token", token);
-    window.location.hash = "";
-  }
-
-  return token;
-}
-
-let TWITCH_TOKEN = localStorage.getItem("twitch_token") || getTokenFromHash();
     /* =========================
         DEFAULTS & SETTINGS
     ========================== */
@@ -855,7 +584,6 @@ let TWITCH_TOKEN = localStorage.getItem("twitch_token") || getTokenFromHash();
       label: "FOLLOWER GOAL",
       goal: 500,
       suffix: "Followers",
-      channelName: "artilla_ch",
       current: 0,
       backgroundColor: "#0c0c12",
       backgroundOpacity: 72,
@@ -866,14 +594,10 @@ let TWITCH_TOKEN = localStorage.getItem("twitch_token") || getTokenFromHash();
 
     let settings = {
       ...DEFAULTS,
-      ...JSON.parse(
-        localStorage.getItem(
-          "followerGoalSettings"
-        ) || "{}"
-      )
+      ...JSON.parse(localStorage.getItem("followerGoalSettings") || "{}")
     };
 
-    // 強制歸零：無論快取記什麼，啟動時強制從0開始
+    // Always start display at 0; live count arrives from the Worker shortly
     settings.current = 0;
 
     let syncBgColorControl = function() {};
@@ -895,35 +619,34 @@ let TWITCH_TOKEN = localStorage.getItem("twitch_token") || getTokenFromHash();
 
     function renderOverlay() {
       const current = isNaN(Number(settings.current)) ? 0 : Number(settings.current);
-      const goal = Number(settings.goal ?? 1);
-
+      const goal    = Number(settings.goal ?? 1) || 1;
       const percent = Math.min((current / goal) * 100, 100);
 
-      const backgroundColor = hexToRgba(settings.backgroundColor, settings.backgroundOpacity / 100);
-      const progressGradient = `linear-gradient(90deg, ${settings.progressStartColor} 0%, ${settings.progressEndColor} 100%)`;
+      const bgColor  = hexToRgba(settings.backgroundColor, settings.backgroundOpacity / 100);
+      const gradient = `linear-gradient(90deg, ${settings.progressStartColor} 0%, ${settings.progressEndColor} 100%)`;
 
-      labelText.textContent = settings.label;
-      goalText.textContent = `${current} / ${settings.goal} ${settings.suffix}`;
-      percentText.textContent = `${Math.round(percent)}%`;
-      progressFill.style.width = `${percent}%`;
+      document.getElementById("labelText").textContent   = settings.label;
+      document.getElementById("goalText").textContent    = `${current} / ${settings.goal} ${settings.suffix}`;
+      document.getElementById("percentText").textContent = `${Math.round(percent)}%`;
+      document.getElementById("progressFill").style.width = `${percent}%`;
 
-      document.documentElement.style.setProperty("--overlay-bg", backgroundColor);
-      document.documentElement.style.setProperty("--text-color", settings.textColor);
-      document.documentElement.style.setProperty("--progress-color", progressGradient);
+      document.documentElement.style.setProperty("--overlay-bg",      bgColor);
+      document.documentElement.style.setProperty("--text-color",      settings.textColor);
+      document.documentElement.style.setProperty("--progress-color",  gradient);
 
       syncColorPreviews();
     }
 
     /* =========================
-        INPUTS
+        POPULATE INPUTS
     ========================== */
 
     function populateInputs() {
-      labelInput.value = settings.label;
-      goalInput.value = settings.goal;
-      suffixInput.value = settings.suffix;
-      bgOpacityInput.value = Number(settings.backgroundOpacity);
-      bgOpacityValue.value = `${settings.backgroundOpacity}%`;
+      document.getElementById("labelInput").value     = settings.label;
+      document.getElementById("goalInput").value      = settings.goal;
+      document.getElementById("suffixInput").value    = settings.suffix;
+      document.getElementById("bgOpacityInput").value = Number(settings.backgroundOpacity);
+      document.getElementById("bgOpacityValue").value = `${settings.backgroundOpacity}%`;
       syncColorPreviews();
     }
 
@@ -936,226 +659,133 @@ let TWITCH_TOKEN = localStorage.getItem("twitch_token") || getTokenFromHash();
     }
 
     function hexToRgb(hex) {
-      const normalized = normalizeHexColor(hex).slice(1);
+      const n = normalizeHexColor(hex).slice(1);
       return {
-        red: parseInt(normalized.slice(0, 2), 16),
-        green: parseInt(normalized.slice(2, 4), 16),
-        blue: parseInt(normalized.slice(4, 6), 16)
+        red:   parseInt(n.slice(0,2), 16),
+        green: parseInt(n.slice(2,4), 16),
+        blue:  parseInt(n.slice(4,6), 16)
       };
     }
 
-    function clampByte(value) {
-      return Math.max(0, Math.min(255, Number(value) || 0));
+    function clampByte(v) { return Math.max(0, Math.min(255, Number(v) || 0)); }
+
+    function rgbToHex(r, g, b) {
+      return `#${[r,g,b].map(v => clampByte(v).toString(16).padStart(2,"0")).join("")}`;
     }
 
-    function rgbToHex(red, green, blue) {
-      return `#${[red, green, blue]
-        .map(function(value) {
-          return clampByte(value).toString(16).padStart(2, "0");
-        }).join("")}`;
-    }
-
-    function rgbToHsv(red, green, blue) {
-      const r = clampByte(red) / 255;
-      const g = clampByte(green) / 255;
-      const b = clampByte(blue) / 255;
-
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      const delta = max - min;
-
-      let hue = 0;
-
-      if (delta !== 0) {
-        if (max === r) {
-          hue = ((g - b) / delta) % 6;
-        } else if (max === g) {
-          hue = (b - r) / delta + 2;
-        } else {
-          hue = (r - g) / delta + 4;
-        }
+    function rgbToHsv(r, g, b) {
+      const rv = clampByte(r)/255, gv = clampByte(g)/255, bv = clampByte(b)/255;
+      const max = Math.max(rv,gv,bv), min = Math.min(rv,gv,bv), d = max - min;
+      let h = 0;
+      if (d !== 0) {
+        if      (max === rv) h = ((gv-bv)/d) % 6;
+        else if (max === gv) h = (bv-rv)/d + 2;
+        else                 h = (rv-gv)/d + 4;
       }
-
-      hue = Math.round(hue * 60);
-      if (hue < 0) hue += 360;
-
-      return {
-        hue,
-        saturation: max === 0 ? 0 : delta / max,
-        value: max
-      };
+      h = Math.round(h*60);
+      if (h < 0) h += 360;
+      return { hue: h, saturation: max===0 ? 0 : d/max, value: max };
     }
 
-    function hsvToRgb(hue, saturation, value) {
-      const normalizedHue = ((Number(hue) % 360) + 360) % 360;
-      const chroma = value * saturation;
-      const segment = normalizedHue / 60;
-      const x = chroma * (1 - Math.abs((segment % 2) - 1));
-      const match = value - chroma;
-
-      let red = 0, green = 0, blue = 0;
-
-      if (segment >= 0 && segment < 1) {
-        red = chroma; green = x;
-      } else if (segment < 2) {
-        red = x; green = chroma;
-      } else if (segment < 3) {
-        green = chroma; blue = x;
-      } else if (segment < 4) {
-        green = x; blue = chroma;
-      } else if (segment < 5) {
-        red = x; blue = chroma;
-      } else {
-        red = chroma; blue = x;
-      }
-
-      return {
-        red: Math.round((red + match) * 255),
-        green: Math.round((green + match) * 255),
-        blue: Math.round((blue + match) * 255)
-      };
+    function hsvToRgb(h, s, v) {
+      const hn = ((Number(h)%360)+360)%360;
+      const c = v*s, seg = hn/60, x = c*(1-Math.abs((seg%2)-1)), m = v-c;
+      let r=0,g=0,b=0;
+      if      (seg<1){r=c;g=x}
+      else if (seg<2){r=x;g=c}
+      else if (seg<3){g=c;b=x}
+      else if (seg<4){g=x;b=c}
+      else if (seg<5){r=x;b=c}
+      else           {r=c;b=x}
+      return { red:Math.round((r+m)*255), green:Math.round((g+m)*255), blue:Math.round((b+m)*255) };
     }
 
     function hexToRgba(hex, alpha) {
-      const rgb = hexToRgb(hex);
-      return `rgba(${rgb.red}, ${rgb.green}, ${rgb.blue}, ${alpha.toFixed(2)})`;
+      const {red,green,blue} = hexToRgb(hex);
+      return `rgba(${red},${green},${blue},${alpha.toFixed(2)})`;
     }
 
-    function bindColorControl(config) {
-      const hexInput = document.getElementById(config.hexInputId);
-      const panel = document.getElementById(config.panelId);
-      const thumb = document.getElementById(config.thumbId);
-      const hueInput = document.getElementById(config.hueInputId);
-      const hueValue = document.getElementById(config.hueValueId);
-      const saturationValue = document.getElementById(config.saturationValueId);
-      const brightnessValue = document.getElementById(config.brightnessValueId);
+    /* =========================
+        COLOUR PICKERS
+    ========================== */
 
-      const state = { hue: 0, saturation: 0, value: 1 };
+    function bindColorControl(cfg) {
+      const hexInput  = document.getElementById(cfg.hexInputId);
+      const panel     = document.getElementById(cfg.panelId);
+      const thumb     = document.getElementById(cfg.thumbId);
+      const hueInput  = document.getElementById(cfg.hueInputId);
+      const hueValue  = document.getElementById(cfg.hueValueId);
+      const satValue  = document.getElementById(cfg.saturationValueId);
+      const briValue  = document.getElementById(cfg.brightnessValueId);
+
+      const state = { hue:0, saturation:0, value:1 };
 
       function syncFromSettings() {
-        const rgb = hexToRgb(settings[config.settingKey]);
-        const hsv = rgbToHsv(rgb.red, rgb.green, rgb.blue);
-
-        state.hue = hsv.saturation === 0 ? state.hue : hsv.hue;
+        const {red,green,blue} = hexToRgb(settings[cfg.settingKey]);
+        const hsv = rgbToHsv(red,green,blue);
+        state.hue        = hsv.saturation === 0 ? state.hue : hsv.hue;
         state.saturation = hsv.saturation;
-        state.value = hsv.value;
+        state.value      = hsv.value;
 
-        hexInput.value = settings[config.settingKey].toUpperCase();
-        hueInput.value = Math.round(state.hue);
-        hueValue.value = `${Math.round(state.hue)}deg`;
-        saturationValue.value = `${Math.round(state.saturation * 100)}%`;
-        brightnessValue.value = `${Math.round(state.value * 100)}%`;
+        hexInput.value      = settings[cfg.settingKey].toUpperCase();
+        hueInput.value      = Math.round(state.hue);
+        hueValue.value      = `${Math.round(state.hue)}deg`;
+        satValue.value      = `${Math.round(state.saturation*100)}%`;
+        briValue.value      = `${Math.round(state.value*100)}%`;
 
-        const baseColor = hsvToRgb(state.hue, 1, 1);
-        const hueColor = rgbToHex(baseColor.red, baseColor.green, baseColor.blue);
-
+        const base      = hsvToRgb(state.hue,1,1);
+        const hueColor  = rgbToHex(base.red,base.green,base.blue);
         panel.style.backgroundColor = hueColor;
         hueInput.style.setProperty("--hue-color", hueColor);
-        thumb.style.left = `${state.saturation * 100}%`;
-        thumb.style.top = `${(1 - state.value) * 100}%`;
+        thumb.style.left = `${state.saturation*100}%`;
+        thumb.style.top  = `${(1-state.value)*100}%`;
       }
 
       function commitFromState() {
-        const rgb = hsvToRgb(state.hue, state.saturation, state.value);
-        settings[config.settingKey] = rgbToHex(rgb.red, rgb.green, rgb.blue);
+        const {red,green,blue} = hsvToRgb(state.hue,state.saturation,state.value);
+        settings[cfg.settingKey] = rgbToHex(red,green,blue);
         renderOverlay();
       }
 
-      function updateFromPanel(event) {
-        const bounds = panel.getBoundingClientRect();
-        const saturation = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
-        const value = 1 - Math.min(1, Math.max(0, (event.clientY - bounds.top) / bounds.height));
-
-        state.saturation = saturation;
-        state.value = value;
+      function updateFromPanel(e) {
+        const b  = panel.getBoundingClientRect();
+        state.saturation = Math.min(1, Math.max(0, (e.clientX-b.left)/b.width));
+        state.value      = 1 - Math.min(1, Math.max(0, (e.clientY-b.top)/b.height));
         commitFromState();
       }
 
-      panel.addEventListener("pointerdown", function(event) {
-        event.preventDefault();
-        panel.setPointerCapture(event.pointerId);
-        updateFromPanel(event);
-      });
-
-      panel.addEventListener("pointermove", function(event) {
-        if ((event.buttons & 1) !== 1) return;
-        updateFromPanel(event);
-      });
-
-      hexInput.addEventListener("input", function() {
-        const nextColor = hexInput.value.trim().toUpperCase();
-        if (!/^#[0-9A-F]{6}$/.test(nextColor)) return;
-        settings[config.settingKey] = nextColor.toLowerCase();
+      panel.addEventListener("pointerdown", e => { e.preventDefault(); panel.setPointerCapture(e.pointerId); updateFromPanel(e); });
+      panel.addEventListener("pointermove", e => { if ((e.buttons&1)!==1) return; updateFromPanel(e); });
+      hexInput.addEventListener("input", () => {
+        const v = hexInput.value.trim().toUpperCase();
+        if (!/^#[0-9A-F]{6}$/.test(v)) return;
+        settings[cfg.settingKey] = v.toLowerCase();
         renderOverlay();
       });
-
-      hueInput.addEventListener("input", function() {
-        state.hue = Number(hueInput.value);
-        commitFromState();
-      });
+      hueInput.addEventListener("input", () => { state.hue = Number(hueInput.value); commitFromState(); });
 
       return syncFromSettings;
     }
 
-    syncBgColorControl = bindColorControl({
-      settingKey: "backgroundColor",
-      panelId: "bgColorPanel",
-      thumbId: "bgColorThumb",
-      hexInputId: "bgColorHexInput",
-      hueInputId: "bgColorHueInput",
-      hueValueId: "bgColorHueValue",
-      saturationValueId: "bgColorSaturationValue",
-      brightnessValueId: "bgColorBrightnessValue"
-    });
-
-    syncTextColorControl = bindColorControl({
-      settingKey: "textColor",
-      panelId: "textColorPanel",
-      thumbId: "textColorThumb",
-      hexInputId: "textColorHexInput",
-      hueInputId: "textColorHueInput",
-      hueValueId: "textColorHueValue",
-      saturationValueId: "textColorSaturationValue",
-      brightnessValueId: "textColorBrightnessValue"
-    });
-
-    syncProgressStartControl = bindColorControl({
-      settingKey: "progressStartColor",
-      panelId: "progressStartPanel",
-      thumbId: "progressStartThumb",
-      hexInputId: "progressStartHexInput",
-      hueInputId: "progressStartHueInput",
-      hueValueId: "progressStartHueValue",
-      saturationValueId: "progressStartSaturationValue",
-      brightnessValueId: "progressStartBrightnessValue"
-    });
-
-    syncProgressEndControl = bindColorControl({
-      settingKey: "progressEndColor",
-      panelId: "progressEndPanel",
-      thumbId: "progressEndThumb",
-      hexInputId: "progressEndHexInput",
-      hueInputId: "progressEndHueInput",
-      hueValueId: "progressEndHueValue",
-      saturationValueId: "progressEndSaturationValue",
-      brightnessValueId: "progressEndBrightnessValue"
-    });
+    syncBgColorControl       = bindColorControl({ settingKey:"backgroundColor",    panelId:"bgColorPanel",       thumbId:"bgColorThumb",       hexInputId:"bgColorHexInput",       hueInputId:"bgColorHueInput",       hueValueId:"bgColorHueValue",       saturationValueId:"bgColorSaturationValue",       brightnessValueId:"bgColorBrightnessValue" });
+    syncTextColorControl     = bindColorControl({ settingKey:"textColor",           panelId:"textColorPanel",     thumbId:"textColorThumb",     hexInputId:"textColorHexInput",     hueInputId:"textColorHueInput",     hueValueId:"textColorHueValue",     saturationValueId:"textColorSaturationValue",     brightnessValueId:"textColorBrightnessValue" });
+    syncProgressStartControl = bindColorControl({ settingKey:"progressStartColor",  panelId:"progressStartPanel", thumbId:"progressStartThumb", hexInputId:"progressStartHexInput", hueInputId:"progressStartHueInput", hueValueId:"progressStartHueValue", saturationValueId:"progressStartSaturationValue", brightnessValueId:"progressStartBrightnessValue" });
+    syncProgressEndControl   = bindColorControl({ settingKey:"progressEndColor",    panelId:"progressEndPanel",   thumbId:"progressEndThumb",   hexInputId:"progressEndHexInput",   hueInputId:"progressEndHueInput",   hueValueId:"progressEndHueValue",   saturationValueId:"progressEndSaturationValue",   brightnessValueId:"progressEndBrightnessValue" });
 
     function syncColorPreviews() {
-      bgColorPreview.style.setProperty("--chip-color", hexToRgba(settings.backgroundColor, settings.backgroundOpacity / 100));
-      textColorPreview.style.setProperty("--chip-color", settings.textColor);
-      progressStartPreview.style.setProperty("--chip-color", settings.progressStartColor);
-      progressEndPreview.style.setProperty("--chip-color", settings.progressEndColor);
-      bgOpacityValue.value = `${settings.backgroundOpacity}%`;
-
+      document.getElementById("bgColorPreview").style.setProperty("--chip-color", hexToRgba(settings.backgroundColor, settings.backgroundOpacity/100));
+      document.getElementById("textColorPreview").style.setProperty("--chip-color", settings.textColor);
+      document.getElementById("progressStartPreview").style.setProperty("--chip-color", settings.progressStartColor);
+      document.getElementById("progressEndPreview").style.setProperty("--chip-color", settings.progressEndColor);
+      document.getElementById("bgOpacityValue").value = `${settings.backgroundOpacity}%`;
       syncBgColorControl();
       syncTextColorControl();
       syncProgressStartControl();
       syncProgressEndControl();
     }
 
-    bgOpacityInput.addEventListener("input", function() {
-      settings.backgroundOpacity = Number(bgOpacityInput.value);
+    document.getElementById("bgOpacityInput").addEventListener("input", function() {
+      settings.backgroundOpacity = Number(this.value);
       renderOverlay();
     });
 
@@ -1163,10 +793,10 @@ let TWITCH_TOKEN = localStorage.getItem("twitch_token") || getTokenFromHash();
         KEYBOARD SHORTCUTS
     ========================== */
 
-    document.addEventListener("keydown", function(event) {
-      if (event.key !== "F2") return;
+    document.addEventListener("keydown", function(e) {
+      if (e.key !== "F2") return;
       if (document.body.classList.contains("obs-mode")) return;
-      event.preventDefault();
+      e.preventDefault();
       toggleSettings();
     });
 
@@ -1175,19 +805,18 @@ let TWITCH_TOKEN = localStorage.getItem("twitch_token") || getTokenFromHash();
     ========================== */
 
     function saveSettings() {
-      settings.label = labelInput.value;
-      settings.goal = Number(goalInput.value);
-      settings.suffix = suffixInput.value;
-      settings.backgroundOpacity = Number(bgOpacityInput.value);
+      settings.label             = document.getElementById("labelInput").value;
+      settings.goal              = Number(document.getElementById("goalInput").value);
+      settings.suffix            = document.getElementById("suffixInput").value;
+      settings.backgroundOpacity = Number(document.getElementById("bgOpacityInput").value);
 
       localStorage.setItem("followerGoalSettings", JSON.stringify(settings));
       renderOverlay();
 
-      saveStatus.textContent = "Overlay saved.";
-      window.clearTimeout(saveSettings.timeoutId);
-      saveSettings.timeoutId = window.setTimeout(function() {
-        saveStatus.textContent = "";
-      }, 1600);
+      const el = document.getElementById("saveStatus");
+      el.textContent = "Overlay saved.";
+      clearTimeout(saveSettings._t);
+      saveSettings._t = setTimeout(() => { el.textContent = ""; }, 1600);
     }
 
     function toggleSettings() {
@@ -1195,90 +824,49 @@ let TWITCH_TOKEN = localStorage.getItem("twitch_token") || getTokenFromHash();
     }
 
     /* =========================
-        TWITCH FOLLOWER SYNC (Fetch API)
+        FOLLOWER POLLING
+        ─ Replaces the broken WebSocket + OAuth flow.
+        ─ Works inside OBS Browser Source with no special config.
+        ─ Your Cloudflare Worker handles the Twitch API call server-side
+          so no token is needed here at all.
     ========================== */
 
+    const statusDot = document.getElementById("statusDot");
+
     async function fetchFollowerCount() {
+      statusDot.textContent = "⏳ fetching…";
       try {
-        const response = await fetch("https://goals-bar.artillaatelier.workers.dev/");
-        const data = await response.json();
-        if (data.followers !== undefined) {
-          settings.current = data.followers;
+        const res  = await fetch(WORKER_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (typeof data.followers === "number" || typeof data.followers === "string") {
+          settings.current = Number(data.followers);
           renderOverlay();
+          const now = new Date().toLocaleTimeString();
+          statusDot.textContent = `✅ ${settings.current} followers · ${now}`;
+        } else {
+          // Worker returned unexpected shape — show what we got to help debug
+          statusDot.textContent = `⚠ unexpected: ${JSON.stringify(data).slice(0,60)}`;
+          console.warn("Unexpected Worker response:", data);
         }
-      } catch(error) {
-        console.error("Failed to fetch followers API:", error);
+      } catch (err) {
+        statusDot.textContent = `❌ ${err.message}`;
+        console.error("Worker fetch failed:", err);
       }
     }
 
-   /* =========================
-   TWITCH EVENTSUB WS
-========================= */
+    /* =========================
+        INIT
+    ========================== */
 
-let socket;
+    populateInputs();
+    renderOverlay();
 
-function connectWS() {
-  if (!TWITCH_TOKEN) {
-    console.log("No token yet");
-    return;
-  }
+    // Fetch immediately on load, then on a fixed interval
+    fetchFollowerCount();
+    setInterval(fetchFollowerCount, POLL_INTERVAL_MS);
 
-  socket = new WebSocket("wss://eventsub.wss.twitch.tv/ws");
-
-  let sessionId;
-
-  socket.onmessage = async (event) => {
-    const msg = JSON.parse(event.data);
-
-    if (msg.metadata.message_type === "session_welcome") {
-      sessionId = msg.payload.session.id;
-      subscribe(sessionId);
-    }
-
-   if (msg.metadata.message_type === "notification") {
-      if (msg.metadata.subscription_type === "channel.follow") {
-        fetchFollowerCount(); // 修正為正確的函數名稱
-      }
-    }
-  };
-}
-
-async function subscribe(sessionId) {
-  const broadcasterId = "YOUR_BROADCASTER_ID";
-
-  await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", {
-    method: "POST",
-    headers: {
-      "Client-ID": TWITCH_CLIENT_ID,
-      "Authorization": "Bearer " + TWITCH_TOKEN,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      type: "channel.follow",
-      version: "2",
-      condition: {
-        broadcaster_user_id: broadcasterId
-      },
-      transport: {
-        method: "websocket",
-        session_id: sessionId
-      }
-    })
-  });
-}
-
-/* =========================
-   INIT
-========================= */
-
-populateInputs(); // 建議加上這個，讓右側設定面板讀取預設值
-renderOverlay();  // 修正名稱
-
-if (TWITCH_TOKEN) {
-  connectWS();
-  fetchFollowerCount(); // 修正名稱
-}
-</script>
-
+  </script>
 </body>
 </html>
