@@ -21,16 +21,22 @@
       --text-color: #ffffff;
       --color-a: #8b5cf6;
       --color-b: #ec4899;
+      --color-c: #06b6d4;
+      --color-d: #fbbf24;
 
       --wave-width: 22px;
       --wave-period: 40px;
     }
 
-    /* Register the blob position vars so they can interpolate in animations. */
+    /* Register the blob position vars so percentages can interpolate. */
     @property --bx1 { syntax: "<percentage>"; inherits: false; initial-value: 30%; }
     @property --by1 { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
     @property --bx2 { syntax: "<percentage>"; inherits: false; initial-value: 70%; }
     @property --by2 { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
+    @property --bx3 { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
+    @property --by3 { syntax: "<percentage>"; inherits: false; initial-value: 30%; }
+    @property --bx4 { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
+    @property --by4 { syntax: "<percentage>"; inherits: false; initial-value: 70%; }
 
     * { box-sizing: border-box; }
 
@@ -94,8 +100,9 @@
     }
 
     /* Plain rectangle — no shaping/clipping on the fill itself.
-       Two radial-gradient blobs (one per chosen colour) drift around on top
-       of a base linear gradient so the fill looks like flowing liquid. */
+       Four radial blobs (one per chosen colour) drift around on top of a
+       multi-stop base gradient. Each blob's X and Y are driven by separate
+       animations on prime-ish periods, so the motion never resyncs. */
     .progress-fill {
       position: absolute;
       left: 0;
@@ -103,21 +110,37 @@
       height: 100%;
       width: var(--progress);
       background:
-        radial-gradient(circle at var(--bx1) var(--by1), var(--color-a) 0%, transparent 65%),
-        radial-gradient(circle at var(--bx2) var(--by2), var(--color-b) 0%, transparent 65%),
-        linear-gradient(90deg, var(--color-a) 0%, var(--color-b) 100%);
+        radial-gradient(circle at var(--bx1) var(--by1), var(--color-a) 0%, transparent 55%),
+        radial-gradient(circle at var(--bx2) var(--by2), var(--color-b) 0%, transparent 55%),
+        radial-gradient(circle at var(--bx3) var(--by3), var(--color-c) 0%, transparent 55%),
+        radial-gradient(circle at var(--bx4) var(--by4), var(--color-d) 0%, transparent 55%),
+        linear-gradient(120deg,
+          var(--color-a) 0%,
+          var(--color-b) 33%,
+          var(--color-c) 66%,
+          var(--color-d) 100%);
       transition: width 0.9s cubic-bezier(0.22,1,0.36,1);
       animation:
-        blob-x1  9s ease-in-out infinite alternate,
-        blob-y1  7s ease-in-out infinite alternate,
+        blob-x1  7s ease-in-out infinite alternate,
+        blob-y1 11s ease-in-out infinite alternate,
         blob-x2 13s ease-in-out infinite alternate,
-        blob-y2 11s ease-in-out infinite alternate;
+        blob-y2  9s ease-in-out infinite alternate,
+        blob-x3 17s ease-in-out infinite alternate,
+        blob-y3  5s ease-in-out infinite alternate,
+        blob-x4 19s ease-in-out infinite alternate,
+        blob-y4 15s ease-in-out infinite alternate;
     }
 
-    @keyframes blob-x1 { from { --bx1: 10%; } to { --bx1: 90%; } }
-    @keyframes blob-y1 { from { --by1: 20%; } to { --by1: 80%; } }
-    @keyframes blob-x2 { from { --bx2: 85%; } to { --bx2: 15%; } }
-    @keyframes blob-y2 { from { --by2: 75%; } to { --by2: 25%; } }
+    /* Each blob sweeps a different range so the four paths trace distinct
+       Lissajous-like figures — net effect: motion looks random in every axis. */
+    @keyframes blob-x1 { from { --bx1:  5%; } to { --bx1:  95%; } }
+    @keyframes blob-y1 { from { --by1: 20%; } to { --by1:  80%; } }
+    @keyframes blob-x2 { from { --bx2: 90%; } to { --bx2:  10%; } }
+    @keyframes blob-y2 { from { --by2: 75%; } to { --by2:  25%; } }
+    @keyframes blob-x3 { from { --bx3: 25%; } to { --bx3:  75%; } }
+    @keyframes blob-y3 { from { --by3: 90%; } to { --by3:  10%; } }
+    @keyframes blob-x4 { from { --bx4: 70%; } to { --bx4:  30%; } }
+    @keyframes blob-y4 { from { --by4: 15%; } to { --by4:  85%; } }
 
     /* Track-coloured overlay sitting at the fill tip with a wavy left edge.
        Opaque colour matches the empty track exactly, so the masked region
@@ -499,9 +522,9 @@
       </div>
     </div>
 
-    <!-- Progress Start -->
+    <!-- Gradient Color 1 -->
     <div class="field">
-      <label>Progress Start Color</label>
+      <label>Gradient Color 1</label>
       <div class="color-row">
         <div class="color-chip" id="progressStartPreview"></div>
         <div class="color-control">
@@ -522,9 +545,9 @@
       </div>
     </div>
 
-    <!-- Progress End -->
+    <!-- Gradient Color 2 -->
     <div class="field">
-      <label>Progress End Color</label>
+      <label>Gradient Color 2</label>
       <div class="color-row">
         <div class="color-chip" id="progressEndPreview"></div>
         <div class="color-control">
@@ -541,6 +564,52 @@
             <span>B<output id="progressEndBrightnessValue"></output></span>
           </div>
           <input class="hex-input" id="progressEndHexInput" type="text" maxlength="7" placeholder="#EC4899">
+        </div>
+      </div>
+    </div>
+
+    <!-- Gradient Color 3 -->
+    <div class="field">
+      <label>Gradient Color 3</label>
+      <div class="color-row">
+        <div class="color-chip" id="progressColorCPreview"></div>
+        <div class="color-control">
+          <div class="picker-panel" id="progressColorCPanel">
+            <div class="picker-thumb" id="progressColorCThumb"></div>
+          </div>
+          <div class="picker-meta">
+            <label for="progressColorCHueInput">Hue</label>
+            <input class="hue-slider" id="progressColorCHueInput" type="range" min="0" max="360" step="1">
+            <output class="hue-value" id="progressColorCHueValue" for="progressColorCHueInput"></output>
+          </div>
+          <div class="picker-readout">
+            <span>S<output id="progressColorCSaturationValue"></output></span>
+            <span>B<output id="progressColorCBrightnessValue"></output></span>
+          </div>
+          <input class="hex-input" id="progressColorCHexInput" type="text" maxlength="7" placeholder="#06B6D4">
+        </div>
+      </div>
+    </div>
+
+    <!-- Gradient Color 4 -->
+    <div class="field">
+      <label>Gradient Color 4</label>
+      <div class="color-row">
+        <div class="color-chip" id="progressColorDPreview"></div>
+        <div class="color-control">
+          <div class="picker-panel" id="progressColorDPanel">
+            <div class="picker-thumb" id="progressColorDThumb"></div>
+          </div>
+          <div class="picker-meta">
+            <label for="progressColorDHueInput">Hue</label>
+            <input class="hue-slider" id="progressColorDHueInput" type="range" min="0" max="360" step="1">
+            <output class="hue-value" id="progressColorDHueValue" for="progressColorDHueInput"></output>
+          </div>
+          <div class="picker-readout">
+            <span>S<output id="progressColorDSaturationValue"></output></span>
+            <span>B<output id="progressColorDBrightnessValue"></output></span>
+          </div>
+          <input class="hex-input" id="progressColorDHexInput" type="text" maxlength="7" placeholder="#FBBF24">
         </div>
       </div>
     </div>
@@ -586,7 +655,9 @@
       backgroundOpacity: 95,
       textColor: "#ffffff",
       progressStartColor: "#8b5cf6",
-      progressEndColor: "#ec4899"
+      progressEndColor: "#ec4899",
+      progressColorC: "#06b6d4",
+      progressColorD: "#fbbf24"
     };
 
     let settings = {
@@ -597,10 +668,12 @@
     let current = 0;
     let override = null;
 
-    let syncBgColorControl       = function() {};
-    let syncTextColorControl     = function() {};
-    let syncProgressStartControl = function() {};
-    let syncProgressEndControl   = function() {};
+    let syncBgColorControl        = function() {};
+    let syncTextColorControl      = function() {};
+    let syncProgressStartControl  = function() {};
+    let syncProgressEndControl    = function() {};
+    let syncProgressColorCControl = function() {};
+    let syncProgressColorDControl = function() {};
 
     if (window.location.search.includes("obs")) {
       document.body.classList.add("obs-mode");
@@ -630,6 +703,8 @@
       document.documentElement.style.setProperty("--text-color", settings.textColor);
       document.documentElement.style.setProperty("--color-a",    settings.progressStartColor);
       document.documentElement.style.setProperty("--color-b",    settings.progressEndColor);
+      document.documentElement.style.setProperty("--color-c",    settings.progressColorC);
+      document.documentElement.style.setProperty("--color-d",    settings.progressColorD);
 
       syncColorPreviews();
     }
@@ -743,21 +818,27 @@
       return syncFromSettings;
     }
 
-    syncBgColorControl       = bindColorControl({ settingKey:"backgroundColor",    panelId:"bgColorPanel",       thumbId:"bgColorThumb",       hexInputId:"bgColorHexInput",       hueInputId:"bgColorHueInput",       hueValueId:"bgColorHueValue",       saturationValueId:"bgColorSaturationValue",       brightnessValueId:"bgColorBrightnessValue" });
-    syncTextColorControl     = bindColorControl({ settingKey:"textColor",          panelId:"textColorPanel",     thumbId:"textColorThumb",     hexInputId:"textColorHexInput",     hueInputId:"textColorHueInput",     hueValueId:"textColorHueValue",     saturationValueId:"textColorSaturationValue",     brightnessValueId:"textColorBrightnessValue" });
-    syncProgressStartControl = bindColorControl({ settingKey:"progressStartColor", panelId:"progressStartPanel", thumbId:"progressStartThumb", hexInputId:"progressStartHexInput", hueInputId:"progressStartHueInput", hueValueId:"progressStartHueValue", saturationValueId:"progressStartSaturationValue", brightnessValueId:"progressStartBrightnessValue" });
-    syncProgressEndControl   = bindColorControl({ settingKey:"progressEndColor",   panelId:"progressEndPanel",   thumbId:"progressEndThumb",   hexInputId:"progressEndHexInput",   hueInputId:"progressEndHueInput",   hueValueId:"progressEndHueValue",   saturationValueId:"progressEndSaturationValue",   brightnessValueId:"progressEndBrightnessValue" });
+    syncBgColorControl        = bindColorControl({ settingKey:"backgroundColor",    panelId:"bgColorPanel",        thumbId:"bgColorThumb",        hexInputId:"bgColorHexInput",        hueInputId:"bgColorHueInput",        hueValueId:"bgColorHueValue",        saturationValueId:"bgColorSaturationValue",        brightnessValueId:"bgColorBrightnessValue" });
+    syncTextColorControl      = bindColorControl({ settingKey:"textColor",          panelId:"textColorPanel",      thumbId:"textColorThumb",      hexInputId:"textColorHexInput",      hueInputId:"textColorHueInput",      hueValueId:"textColorHueValue",      saturationValueId:"textColorSaturationValue",      brightnessValueId:"textColorBrightnessValue" });
+    syncProgressStartControl  = bindColorControl({ settingKey:"progressStartColor", panelId:"progressStartPanel",  thumbId:"progressStartThumb",  hexInputId:"progressStartHexInput",  hueInputId:"progressStartHueInput",  hueValueId:"progressStartHueValue",  saturationValueId:"progressStartSaturationValue",  brightnessValueId:"progressStartBrightnessValue" });
+    syncProgressEndControl    = bindColorControl({ settingKey:"progressEndColor",   panelId:"progressEndPanel",    thumbId:"progressEndThumb",    hexInputId:"progressEndHexInput",    hueInputId:"progressEndHueInput",    hueValueId:"progressEndHueValue",    saturationValueId:"progressEndSaturationValue",    brightnessValueId:"progressEndBrightnessValue" });
+    syncProgressColorCControl = bindColorControl({ settingKey:"progressColorC",     panelId:"progressColorCPanel", thumbId:"progressColorCThumb", hexInputId:"progressColorCHexInput", hueInputId:"progressColorCHueInput", hueValueId:"progressColorCHueValue", saturationValueId:"progressColorCSaturationValue", brightnessValueId:"progressColorCBrightnessValue" });
+    syncProgressColorDControl = bindColorControl({ settingKey:"progressColorD",     panelId:"progressColorDPanel", thumbId:"progressColorDThumb", hexInputId:"progressColorDHexInput", hueInputId:"progressColorDHueInput", hueValueId:"progressColorDHueValue", saturationValueId:"progressColorDSaturationValue", brightnessValueId:"progressColorDBrightnessValue" });
 
     function syncColorPreviews() {
       document.getElementById("bgColorPreview").style.setProperty("--chip-color", hexToRgba(settings.backgroundColor, settings.backgroundOpacity/100));
       document.getElementById("textColorPreview").style.setProperty("--chip-color", settings.textColor);
       document.getElementById("progressStartPreview").style.setProperty("--chip-color", settings.progressStartColor);
       document.getElementById("progressEndPreview").style.setProperty("--chip-color", settings.progressEndColor);
+      document.getElementById("progressColorCPreview").style.setProperty("--chip-color", settings.progressColorC);
+      document.getElementById("progressColorDPreview").style.setProperty("--chip-color", settings.progressColorD);
       document.getElementById("bgOpacityValue").value = `${settings.backgroundOpacity}%`;
       syncBgColorControl();
       syncTextColorControl();
       syncProgressStartControl();
       syncProgressEndControl();
+      syncProgressColorCControl();
+      syncProgressColorDControl();
     }
 
     document.getElementById("bgOpacityInput").addEventListener("input", function() {
@@ -841,7 +922,9 @@
         backgroundOpacity: settings.backgroundOpacity,
         textColor: settings.textColor,
         progressStartColor: settings.progressStartColor,
-        progressEndColor: settings.progressEndColor
+        progressEndColor: settings.progressEndColor,
+        progressColorC: settings.progressColorC,
+        progressColorD: settings.progressColorD
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
       renderOverlay();
