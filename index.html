@@ -1,244 +1,280 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Twitch Follower Goal Overlay</title>
 
-  <title>Twitch Follower Goal Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --overlay-width: 720px;
+  --overlay-height: 82px;
+  --overlay-bg: rgba(12,12,18,0.72);
+  --text-color: #fff;
+  --progress-color: linear-gradient(90deg,#8b5cf6,#ec4899);
+}
 
-  <style>
-    body { margin:0; background:transparent; font-family:Inter,sans-serif; overflow:hidden; }
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:Inter,sans-serif;
+  background:transparent;
+  overflow:hidden;
+}
 
-    .overlay-wrap {
-      width:100%; height:100%;
-      display:flex; align-items:center; justify-content:center;
-    }
+/* OVERLAY */
+.overlay-wrap{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
-    .overlay {
-      width:720px; height:82px;
-      border-radius:24px;
-      background: rgba(12,12,18,0.72);
-      border:1px solid rgba(255,255,255,0.15);
-      position:relative;
-      overflow:hidden;
-      backdrop-filter: blur(14px);
-    }
+.overlay{
+  width:var(--overlay-width);
+  height:var(--overlay-height);
+  border-radius:24px;
+  overflow:hidden;
+  background:var(--overlay-bg);
+  backdrop-filter:blur(14px);
+  position:relative;
+  border:1px solid rgba(255,255,255,0.15);
+}
 
-    .progress-fill {
-      position:absolute;
-      left:0; top:0; height:100%;
-      width:0%;
-      background: linear-gradient(90deg,#8b5cf6,#ec4899);
-      transition: width .8s ease;
-    }
+.progress-fill{
+  position:absolute;
+  left:0;top:0;
+  height:100%;
+  width:0%;
+  background:var(--progress-color);
+  transition:.8s ease;
+}
 
-    .content {
-      position:relative;
-      z-index:2;
-      height:100%;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:0 24px;
-      color:white;
-    }
+.content{
+  position:relative;
+  z-index:2;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  height:100%;
+  padding:0 24px;
+  color:var(--text-color);
+}
 
-    .label { font-size:12px; opacity:.8; }
-    .goal { font-size:20px; font-weight:700; }
-    .percent { font-size:16px; font-weight:700; }
+.label{font-size:12px;opacity:.8;}
+.goal{font-size:20px;font-weight:700;}
+.percent{font-size:16px;font-weight:700;}
 
-    .login {
-      position:fixed;
-      top:20px; left:20px;
-      padding:10px 14px;
-      border-radius:10px;
-      border:none;
-      cursor:pointer;
-      background:#9146FF;
-      color:white;
-      font-weight:700;
-      z-index:9999;
-    }
-  </style>
+/* SETTINGS */
+.settings{
+  position:fixed;
+  right:20px;
+  top:20px;
+  width:340px;
+  max-height:90vh;
+  overflow:auto;
+  background:rgba(18,18,22,0.92);
+  padding:16px;
+  border-radius:18px;
+  color:white;
+  z-index:9999;
+  backdrop-filter:blur(16px);
+}
+
+.field{margin-bottom:12px;}
+.field label{font-size:12px;opacity:.7;display:block;margin-bottom:4px;}
+.field input{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  background:rgba(255,255,255,0.08);
+  color:white;
+}
+
+.btn{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  font-weight:700;
+  background:linear-gradient(90deg,#8b5cf6,#ec4899);
+  color:white;
+  cursor:pointer;
+}
+
+.toggle{
+  position:fixed;
+  top:20px;
+  left:20px;
+  padding:10px;
+  border-radius:10px;
+  background:rgba(0,0,0,0.6);
+  color:white;
+  border:none;
+  z-index:10000;
+}
+
+/* hide UI */
+body.ui-hidden .settings,
+body.ui-hidden .toggle{display:none;}
+
+.login{
+  position:fixed;
+  top:60px;
+  left:20px;
+  padding:10px 14px;
+  background:#9146FF;
+  border:none;
+  border-radius:10px;
+  color:white;
+  cursor:pointer;
+  z-index:10000;
+}
+</style>
 </head>
 
 <body>
 
+<button class="toggle" onclick="toggleUI()">⚙ UI</button>
 <button class="login" onclick="loginTwitch()">Login Twitch</button>
 
-<div class="overlay-wrap">
-  <div class="overlay">
-    <div class="progress-fill" id="fill"></div>
+<div class="settings">
+<h2>Twitch Overlay</h2>
 
-    <div class="content">
-      <div>
-        <div class="label">FOLLOWER GOAL</div>
-        <div class="goal" id="goalText">0 / 100</div>
-      </div>
-      <div class="percent" id="percent">0%</div>
-    </div>
-  </div>
+<div class="field">
+<label>Label</label>
+<input id="labelInput">
+</div>
+
+<div class="field">
+<label>Goal</label>
+<input id="goalInput" type="number">
+</div>
+
+<div class="field">
+<label>Suffix</label>
+<input id="suffixInput">
+</div>
+
+<div class="field">
+<label>Background Opacity</label>
+<input id="bgOpacityInput" type="range" min="0" max="100">
+</div>
+
+<button class="btn" onclick="save()">Save</button>
+</div>
+
+<div class="overlay-wrap">
+<div class="overlay">
+<div class="progress-fill" id="fill"></div>
+
+<div class="content">
+<div>
+<div class="label" id="label">FOLLOWER GOAL</div>
+<div class="goal" id="goalText">0 / 100</div>
+</div>
+<div class="percent" id="percent">0%</div>
+</div>
+
+</div>
 </div>
 
 <script>
-/* =========================
-   CONFIG
-========================= */
-const TWITCH_CLIENT_ID = "1m5oe4pcm81nctep2f9rrzw3jhvv6i";
-const REDIRECT_URI = window.location.origin + window.location.pathname;
+/* ================= TWITCH CONFIG ================= */
+const TWITCH_CLIENT_ID = "YOUR_CLIENT_ID";
+const BROADCASTER_ID = "YOUR_BROADCASTER_ID";
+const REDIRECT = window.location.origin + window.location.pathname;
+const SCOPES = "user:read:follows";
 
-const SCOPES = [
-  "moderator:read:followers",
-  "user:read:follows"
-].join(" ");
-
-/* =========================
-   AUTH
-========================= */
-
-function loginTwitch() {
-  const url =
-    "https://id.twitch.tv/oauth2/authorize" +
-    "?client_id=" + TWITCH_CLIENT_ID +
-    "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) +
-    "&response_type=token" +
-    "&scope=" + encodeURIComponent(SCOPES);
-
-  window.location = url;
-}
-
-function getTokenFromHash() {
-  const hash = window.location.hash;
-  if (!hash.includes("access_token")) return null;
-
-  const params = new URLSearchParams(hash.replace("#", ""));
-  const token = params.get("access_token");
-
-  if (token) {
-    localStorage.setItem("twitch_token", token);
-    window.location.hash = "";
-  }
-
-  return token;
-}
-
-let TWITCH_TOKEN = localStorage.getItem("twitch_token") || getTokenFromHash();
-
-/* =========================
-   CONFIG STATE
-========================= */
-
+/* ================= SETTINGS ================= */
 let settings = {
-  goal: 500,
-  current: 0
+  label:"FOLLOWER GOAL",
+  goal:100,
+  suffix:"Followers",
+  current:0,
+  bgOpacity:72
 };
 
-/* =========================
-   FETCH FOLLOWERS (Worker API)
-========================= */
+let saved = JSON.parse(localStorage.getItem("overlay")||"{}");
+settings = {...settings,...saved};
 
-async function fetchFollowers() {
-  try {
-    const res = await fetch("https://goals-bar.artillaatelier.workers.dev/");
-    const data = await res.json();
+/* ================= OAuth ================= */
+function loginTwitch(){
+  const url =
+  "https://id.twitch.tv/oauth2/authorize"+
+  "?client_id="+TWITCH_CLIENT_ID+
+  "&redirect_uri="+encodeURIComponent(REDIRECT)+
+  "&response_type=token"+
+  "&scope="+encodeURIComponent(SCOPES);
 
-    if (data.followers !== undefined) {
-      settings.current = data.followers;
-      render();
-    }
-  } catch (e) {
-    console.error(e);
+  location.href=url;
+}
+
+function getToken(){
+  const h = new URLSearchParams(location.hash.replace("#",""));
+  const t = h.get("access_token");
+  if(t){
+    localStorage.setItem("twitch_token",t);
+    history.replaceState(null,null," ");
   }
+  return localStorage.getItem("twitch_token");
 }
 
-/* =========================
-   RENDER
-========================= */
+let TOKEN = getToken();
 
-function render() {
-  const percent = Math.min((settings.current / settings.goal) * 100, 100);
+/* ================= RENDER ================= */
+function render(){
+  const p = Math.min((settings.current/settings.goal)*100,100);
 
-  document.getElementById("goalText").textContent =
-    `${settings.current} / ${settings.goal}`;
-
-  document.getElementById("percent").textContent =
-    Math.round(percent) + "%";
-
-  document.getElementById("fill").style.width =
-    percent + "%";
+  fill.style.width=p+"%";
+  label.innerText=settings.label;
+  goalText.innerText=`${settings.current} / ${settings.goal} ${settings.suffix}`;
+  percent.innerText=Math.round(p)+"%";
 }
 
-/* =========================
-   TWITCH EVENTSUB WS
-========================= */
-
-let socket;
-
-function connectWS() {
-  if (!TWITCH_TOKEN) {
-    console.log("No token yet");
-    return;
-  }
-
-  socket = new WebSocket("wss://eventsub.wss.twitch.tv/ws");
-
-  let sessionId;
-
-  socket.onmessage = async (event) => {
-    const msg = JSON.parse(event.data);
-
-    if (msg.metadata.message_type === "session_welcome") {
-      sessionId = msg.payload.session.id;
-      subscribe(sessionId);
-    }
-
-    if (msg.metadata.message_type === "notification") {
-      if (msg.metadata.subscription_type === "channel.follow") {
-        fetchFollowers();
-      }
-    }
-  };
+/* ================= FOLLOWERS ================= */
+async function fetchFollowers(){
+  try{
+    const res=await fetch("https://goals-bar.artillaatelier.workers.dev/");
+    const data=await res.json();
+    settings.current=data.followers||0;
+    render();
+  }catch(e){}
 }
 
-async function subscribe(sessionId) {
-  const broadcasterId = "YOUR_BROADCASTER_ID";
-
-  await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", {
-    method: "POST",
-    headers: {
-      "Client-ID": TWITCH_CLIENT_ID,
-      "Authorization": "Bearer " + TWITCH_TOKEN,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      type: "channel.follow",
-      version: "2",
-      condition: {
-        broadcaster_user_id: broadcasterId
-      },
-      transport: {
-        method: "websocket",
-        session_id: sessionId
-      }
-    })
-  });
+/* ================= UI ================= */
+function toggleUI(){
+  document.body.classList.toggle("ui-hidden");
 }
 
-/* =========================
-   INIT
-========================= */
+function save(){
+  settings.label=labelInput.value;
+  settings.goal=Number(goalInput.value);
+  settings.suffix=suffixInput.value;
+  settings.bgOpacity=bgOpacityInput.value;
+
+  localStorage.setItem("overlay",JSON.stringify(settings));
+  render();
+}
+
+/* ================= INIT ================= */
+labelInput.value=settings.label;
+goalInput.value=settings.goal;
+suffixInput.value=settings.suffix;
+bgOpacityInput.value=settings.bgOpacity;
 
 render();
+fetchFollowers();
 
-if (TWITCH_TOKEN) {
-  connectWS();
-  fetchFollowers();
-}
+/* auto refresh */
+setInterval(fetchFollowers,30000);
 </script>
 
 </body>
