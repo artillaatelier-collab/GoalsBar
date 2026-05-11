@@ -804,16 +804,45 @@
   </div>
 
   <script>
+
     /* =========================
         TWITCH 授權設定 (請在此處修改)
     ========================== */
-    const TWITCH_CLIENT_ID = '1m5oe4pcm81nctep2f9rrzw3jhvv6i'; // 填入你的 Client ID
-    const TWITCH_TOKEN = 'YOUR_ACCESS_TOKEN_HERE';  // 填入你的 Access Token
-    const BROADCASTER_ID = 'YOUR_BROADCASTER_ID_HERE'; // 填入你的 Broadcaster ID (純數字)
+    const TWITCH_CLIENT_ID = "1m5oe4pcm81nctep2f9rrzw3jhvv6i";
+    const REDIRECT_URI = window.location.origin + window.location.pathname;
 
-    let socket;
-    let sessionId;
+    const SCOPES = [
+    "moderator:read:followers",
+    "user:read:follows"
+    ].join(" ");
+    
+    function loginTwitch() {
+    const url =
+    "https://id.twitch.tv/oauth2/authorize" +
+    "?client_id=" + TWITCH_CLIENT_ID +
+    "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) +
+    "&response_type=token" +
+    "&scope=" + encodeURIComponent(SCOPES);
 
+    window.location = url;
+  }
+
+  function getTokenFromHash() {
+  const hash = window.location.hash;
+  if (!hash.includes("access_token")) return null;
+
+  const params = new URLSearchParams(hash.replace("#", ""));
+  const token = params.get("access_token");
+
+  if (token) {
+    localStorage.setItem("twitch_token", token);
+    window.location.hash = "";
+  }
+
+  return token;
+}
+
+let TWITCH_TOKEN = localStorage.getItem("twitch_token") || getTokenFromHash();
     /* =========================
         DEFAULTS & SETTINGS
     ========================== */
@@ -1178,97 +1207,73 @@
       }
     }
 
-    /* =========================
-        TWITCH EVENTSUB WEBSOCKET
-    ========================== */
+   /* =========================
+   TWITCH EVENTSUB WS
+========================= */
 
-    function connectTwitchWS() {
-      if (TWITCH_CLIENT_ID === 'YOUR_CLIENT_ID_HERE') {
-        console.warn("尚未填寫 Twitch API 憑證，EventSub WebSocket 即時更新未啟用。");
-        return;
-      }
+let socket;
 
-      socket = new WebSocket('wss://eventsub.wss.twitch.tv/ws');
+function connectWS() {
+  if (!TWITCH_TOKEN) {
+    console.log("No token yet");
+    return;
+  }
 
-      socket.onmessage = async (event) => {
-        const data = JSON.parse(event.data);
+  socket = new WebSocket("wss://eventsub.wss.twitch.tv/ws");
 
-        // A. 連接成功並取得 Session ID
-        if (data.metadata.message_type === 'session_welcome') {
-          sessionId = data.payload.session.id;
-          console.log('Twitch WS Connected! Session ID:', sessionId);
-          subscribeToFollowEvents();
-        }
+  let sessionId;
 
-        // B. 收到追隨事件推送
-        if (data.metadata.message_type === 'notification') {
-          const eventType = data.metadata.subscription_type;
-          if (eventType === 'channel.follow') {
-            console.log('🎉 檢測到即時追隨！正在更新進度條...');
-            // 即時向 Worker 抓取最新數值以更新進度條
-            fetchFollowerCount(); 
-          }
-        }
-      };
+  socket.onmessage = async (event) => {
+    const msg = JSON.parse(event.data);
 
-      socket.onclose = () => {
-        console.log('Twitch WS 已斷開連線，5秒後嘗試重連...');
-        setTimeout(connectTwitchWS, 5000);
-      };
+    if (msg.metadata.message_type === "session_welcome") {
+      sessionId = msg.payload.session.id;
+      subscribe(sessionId);
     }
 
-    async function subscribeToFollowEvents() {
-      try {
-        const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
-          method: 'POST',
-          headers: {
-            'Client-ID': TWITCH_CLIENT_ID,
-            'Authorization': `Bearer ${TWITCH_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            type: 'channel.follow',
-            version: '2',
-            condition: {
-              broadcaster_user_id: BROADCASTER_ID,
-              moderator_user_id: BROADCASTER_ID
-            },
-            transport: {
-              method: 'websocket',
-              session_id: sessionId
-            }
-          })
-        });
-
-        const result = await response.json();
-        if (response.ok) {
-          console.log('✅ 即時追隨事件訂閱成功！');
-        } else {
-          console.error('❌ 訂閱失敗：', result);
-        }
-      } catch (error) {
-        console.error('訂閱過程發生錯誤：', error);
+    if (msg.metadata.message_type === "notification") {
+      if (msg.metadata.subscription_type === "channel.follow") {
+        fetchFollowers();
       }
     }
+  };
+}
 
-    /* =========================
-        INIT
-    ========================== */
+async function subscribe(sessionId) {
+  const broadcasterId = "YOUR_BROADCASTER_ID";
 
-    // 初始化介面與色彩
-    renderOverlay();
-    populateInputs();
-    syncColorPreviews();
+  await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", {
+    method: "POST",
+    headers: {
+      "Client-ID": TWITCH_CLIENT_ID,
+      "Authorization": "Bearer " + TWITCH_TOKEN,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      type: "channel.follow",
+      version: "2",
+      condition: {
+        broadcaster_user_id: broadcasterId
+      },
+      transport: {
+        method: "websocket",
+        session_id: sessionId
+      }
+    })
+  });
+}
 
-    // 初始化抓取追隨者總數
-    fetchFollowerCount();
-    
-    // 啟動 WebSocket 即時監聽
-    connectTwitchWS();
+/* =========================
+   INIT
+========================= */
 
-    // 備援輪詢：如果 WebSocket 沒反應，每 5 分鐘也會自動校正一次
-    setInterval(fetchFollowerCount, 300000);
+render();
 
-  </script>
+if (TWITCH_TOKEN) {
+  connectWS();
+  fetchFollowers();
+}
+</script>
+
 </body>
 </html>
