@@ -1323,11 +1323,12 @@ async function subscribe(sessionId) {
    INIT
 ========================= */
 
-render();
+populateInputs(); // 建議加上這個，讓右側設定面板讀取預設值
+renderOverlay();  // 修正名稱
 
 if (TWITCH_TOKEN) {
   connectWS();
-  fetchFollowers();
+  fetchFollowerCount(); // 修正名稱
 }
 </script>
 
