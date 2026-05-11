@@ -19,11 +19,18 @@
       --overlay-bg: rgba(12,12,18,0.72);
       --track-bg: #595959;
       --text-color: #ffffff;
-      --progress-color: linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%);
+      --color-a: #8b5cf6;
+      --color-b: #ec4899;
 
       --wave-width: 22px;
       --wave-period: 40px;
     }
+
+    /* Register the blob position vars so they can interpolate in animations. */
+    @property --bx1 { syntax: "<percentage>"; inherits: false; initial-value: 30%; }
+    @property --by1 { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
+    @property --bx2 { syntax: "<percentage>"; inherits: false; initial-value: 70%; }
+    @property --by2 { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
 
     * { box-sizing: border-box; }
 
@@ -86,16 +93,31 @@
       z-index: 1;
     }
 
-    /* Plain rectangle — no shaping/clipping on the fill itself. */
+    /* Plain rectangle — no shaping/clipping on the fill itself.
+       Two radial-gradient blobs (one per chosen colour) drift around on top
+       of a base linear gradient so the fill looks like flowing liquid. */
     .progress-fill {
       position: absolute;
       left: 0;
       top: 0;
       height: 100%;
       width: var(--progress);
-      background: var(--progress-color);
+      background:
+        radial-gradient(circle at var(--bx1) var(--by1), var(--color-a) 0%, transparent 65%),
+        radial-gradient(circle at var(--bx2) var(--by2), var(--color-b) 0%, transparent 65%),
+        linear-gradient(90deg, var(--color-a) 0%, var(--color-b) 100%);
       transition: width 0.9s cubic-bezier(0.22,1,0.36,1);
+      animation:
+        blob-x1  9s ease-in-out infinite alternate,
+        blob-y1  7s ease-in-out infinite alternate,
+        blob-x2 13s ease-in-out infinite alternate,
+        blob-y2 11s ease-in-out infinite alternate;
     }
+
+    @keyframes blob-x1 { from { --bx1: 10%; } to { --bx1: 90%; } }
+    @keyframes blob-y1 { from { --by1: 20%; } to { --by1: 80%; } }
+    @keyframes blob-x2 { from { --bx2: 85%; } to { --bx2: 15%; } }
+    @keyframes blob-y2 { from { --by2: 75%; } to { --by2: 25%; } }
 
     /* Track-coloured overlay sitting at the fill tip with a wavy left edge.
        Opaque colour matches the empty track exactly, so the masked region
@@ -131,7 +153,8 @@
     .overlay.is-complete .progress-wave { opacity: 0; }
 
     @media (prefers-reduced-motion: reduce) {
-      .progress-wave { animation: none; }
+      .progress-wave,
+      .progress-fill { animation: none; }
     }
 
     .content {
@@ -594,8 +617,7 @@
       const goal    = Number(settings.goal ?? 1) || 1;
       const percent = Math.min(100, Math.max(0, (value / goal) * 100));
 
-      const bgColor  = hexToRgba(settings.backgroundColor, settings.backgroundOpacity / 100);
-      const gradient = `linear-gradient(90deg, ${settings.progressStartColor} 0%, ${settings.progressEndColor} 100%)`;
+      const bgColor = hexToRgba(settings.backgroundColor, settings.backgroundOpacity / 100);
 
       labelText.textContent   = settings.label;
       goalText.textContent    = `${Math.round(value)} / ${settings.goal} ${settings.suffix}`;
@@ -604,9 +626,10 @@
       overlay.style.setProperty("--progress", percent + "%");
       overlay.classList.toggle("is-complete", percent >= 100);
 
-      document.documentElement.style.setProperty("--overlay-bg",     bgColor);
-      document.documentElement.style.setProperty("--text-color",     settings.textColor);
-      document.documentElement.style.setProperty("--progress-color", gradient);
+      document.documentElement.style.setProperty("--overlay-bg", bgColor);
+      document.documentElement.style.setProperty("--text-color", settings.textColor);
+      document.documentElement.style.setProperty("--color-a",    settings.progressStartColor);
+      document.documentElement.style.setProperty("--color-b",    settings.progressEndColor);
 
       syncColorPreviews();
     }
