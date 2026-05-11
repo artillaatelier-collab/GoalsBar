@@ -433,10 +433,8 @@
 
   <button class="toggle-btn" onclick="toggleSettings()">⚙ Settings</button>
 
-  <!-- Status dot: visible outside OBS, hidden inside ?obs mode -->
   <div id="statusDot">⏳ connecting…</div>
 
-  <!-- SETTINGS -->
   <div class="settings" id="settingsPanel">
     <h2>Follower Goal Settings</h2>
 
@@ -585,22 +583,8 @@
   </div>
 
   <script>
-
-    /* =========================
-        WORKER ENDPOINT
-        This is the only data source used — no OAuth, no WebSocket.
-        OBS Browser Source cannot do OAuth redirects, so we rely entirely
-        on the Cloudflare Worker which already returns the follower count.
-    ========================== */
-
     const WORKER_URL = "https://goals-bar.artillaatelier.workers.dev/";
-
-    // How often to re-poll (ms). 30 s is polite; lower if your Worker can handle it.
     const POLL_INTERVAL_MS = 30_000;
-
-    /* =========================
-        DEFAULTS & SETTINGS
-    ========================== */
 
     const DEFAULTS = {
       label: "FOLLOWER GOAL",
@@ -619,7 +603,6 @@
       ...JSON.parse(localStorage.getItem("followerGoalSettings") || "{}")
     };
 
-    // Always start display at 0; live count arrives from the Worker shortly
     settings.current = 0;
 
     let syncBgColorControl = function() {};
@@ -627,17 +610,9 @@
     let syncProgressStartControl = function() {};
     let syncProgressEndControl = function() {};
 
-    /* =========================
-        OBS MODE
-    ========================== */
-
     if (window.location.search.includes("obs")) {
       document.body.classList.add("obs-mode");
     }
-
-    /* =========================
-        RENDER
-    ========================== */
 
     function renderOverlay() {
       const current = isNaN(Number(settings.current)) ? 0 : Number(settings.current);
@@ -659,10 +634,6 @@
       syncColorPreviews();
     }
 
-    /* =========================
-        POPULATE INPUTS
-    ========================== */
-
     function populateInputs() {
       document.getElementById("labelInput").value     = settings.label;
       document.getElementById("goalInput").value      = settings.goal;
@@ -671,10 +642,6 @@
       document.getElementById("bgOpacityValue").value = `${settings.backgroundOpacity}%`;
       syncColorPreviews();
     }
-
-    /* =========================
-        COLOR HELPERS
-    ========================== */
 
     function normalizeHexColor(color) {
       return /^#[0-9a-f]{6}$/i.test(color) ? color : "#ffffff";
@@ -726,10 +693,6 @@
       const {red,green,blue} = hexToRgb(hex);
       return `rgba(${red},${green},${blue},${alpha.toFixed(2)})`;
     }
-
-    /* =========================
-        COLOUR PICKERS
-    ========================== */
 
     function bindColorControl(cfg) {
       const hexInput  = document.getElementById(cfg.hexInputId);
@@ -811,20 +774,12 @@
       renderOverlay();
     });
 
-    /* =========================
-        KEYBOARD SHORTCUTS
-    ========================== */
-
     document.addEventListener("keydown", function(e) {
       if (e.key !== "F2") return;
       if (document.body.classList.contains("obs-mode")) return;
       e.preventDefault();
       toggleSettings();
     });
-
-    /* =========================
-        SAVE
-    ========================== */
 
     function saveSettings() {
       settings.label             = document.getElementById("labelInput").value;
@@ -845,14 +800,6 @@
       document.body.classList.toggle("ui-hidden");
     }
 
-    /* =========================
-        FOLLOWER POLLING
-        ─ Replaces the broken WebSocket + OAuth flow.
-        ─ Works inside OBS Browser Source with no special config.
-        ─ Your Cloudflare Worker handles the Twitch API call server-side
-          so no token is needed here at all.
-    ========================== */
-
     const statusDot = document.getElementById("statusDot");
 
     async function fetchFollowerCount() {
@@ -868,7 +815,6 @@
           const now = new Date().toLocaleTimeString();
           statusDot.textContent = `✅ ${settings.current} followers · ${now}`;
         } else {
-          // Worker returned unexpected shape — show what we got to help debug
           statusDot.textContent = `⚠ unexpected: ${JSON.stringify(data).slice(0,60)}`;
           console.warn("Unexpected Worker response:", data);
         }
@@ -878,17 +824,10 @@
       }
     }
 
-    /* =========================
-        INIT
-    ========================== */
-
     populateInputs();
     renderOverlay();
-
-    // Fetch immediately on load, then on a fixed interval
     fetchFollowerCount();
     setInterval(fetchFollowerCount, POLL_INTERVAL_MS);
-
   </script>
 </body>
 </html>
