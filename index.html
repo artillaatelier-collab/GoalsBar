@@ -90,24 +90,26 @@
       overflow: hidden; /* Clips the waves */
     }
 
-    /* ── WATER WAVE EFFECT ── */
+    /* ── VERTICAL WAVE CAP AT THE END ── */
     .progress-fill::after {
       content: "";
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 200%; /* Extra width for seamless scrolling */
-      height: 100%;
-      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" fill="white" opacity="0.25"/></svg>');
-      background-size: 50% 100%; /* Scale the wave to repeat nicely */
-      background-repeat: repeat-x;
-      animation: wave-move 4s linear infinite;
-      pointer-events: none;
+      top: -10%; /* Slightly taller than bar */
+      right: -8px; /* Positioned at the leading edge */
+      width: 20px;
+      height: 120%;
+      /* This uses the "End" color of your gradient to look like liquid spray */
+      background-color: var(--end-color);
+      mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 100" preserveAspectRatio="none"><path d="M20,0 C10,0 10,12.5 0,12.5 C10,12.5 10,25 20,25 C10,25 10,37.5 0,37.5 C10,37.5 10,50 20,50 C10,50 10,62.5 0,62.5 C10,62.5 10,75 20,75 C10,75 10,87.5 0,87.5 C10,87.5 10,100 20,100 Z" fill="black"/></svg>');
+      mask-size: 100% 40px; /* Controls wave frequency */
+      -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 100" preserveAspectRatio="none"><path d="M20,0 C10,0 10,12.5 0,12.5 C10,12.5 10,25 20,25 C10,25 10,37.5 0,37.5 C10,37.5 10,50 20,50 C10,50 10,62.5 0,62.5 C10,62.5 10,75 20,75 C10,75 10,87.5 0,87.5 C10,87.5 10,100 20,100 Z" fill="black"/></svg>');
+      -webkit-mask-size: 100% 40px;
+      animation: wave-move-vert 1s linear infinite;
     }
 
-    @keyframes wave-move {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
+    @keyframes wave-move-vert {
+      0% { mask-position: 0 0; -webkit-mask-position: 0 0; }
+      100% { mask-position: 0 40px; -webkit-mask-position: 0 40px; }
     }
 
     .content {
