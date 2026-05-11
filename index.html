@@ -49,6 +49,9 @@
    /* =========================
         OVERLAY
     ========================== */
+/* =========================
+        OVERLAY
+    ========================== */
 
     .overlay-wrap {
       width: 100%;
@@ -126,8 +129,37 @@
       align-items: center;
       justify-content: space-between;
       
-      padding-left: 100px; /* 把文字往右推，避開徽章 */
-      padding-right: 0px;
+      padding-left: 95px; /* 把文字往右推，避開徽章 */
+      padding-right: 24px;
+    }
+
+    .left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .label {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-color);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+    }
+
+    .goal-text {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-color);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+    }
+
+    .percent {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-color);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
     }
 
     .left {
