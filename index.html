@@ -46,14 +46,13 @@
       background: transparent;
     }
 
-    /* =========================
+   /* =========================
         OVERLAY
     ========================== */
 
     .overlay-wrap {
       width: 100%;
       height: 100%;
-
       display: flex;
       align-items: center;
       justify-content: center;
@@ -61,17 +60,15 @@
 
     .overlay {
       position: relative;
-
       width: var(--overlay-width);
       height: var(--overlay-height);
-
-      /* 1. 套用自定義圖片為背景 */
+      
+      /* 套用自定義圖片為背景 */
       background-image: var(--bg-image);
       background-size: 100% 100%;
       background-position: center;
       background-repeat: no-repeat;
 
-/* 2. 移除原本的玻璃邊框與陰影 */
       background-color: transparent;
       border: none;
       box-shadow: none;
@@ -79,21 +76,35 @@
       border-radius: 0;
     }
 
-    /* 移除原本的漸層遮罩 */
-    .overlay::before { display: none; }
+    /* 🌟 魔法遮罩：用 clip-path 剪出原本背景的「圓形徽章」，蓋在進度條上面 */
+    .overlay::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: var(--bg-image);
+      background-size: 100% 100%;
+      background-position: center;
+      
+      z-index: 2; /* 確保它在進度條（z-index:1）的上方 */
+      /* 這個數值代表：剪出一個半徑 42px 的圓，圓心在 X:40px, Y:40px。可依圖片微調 */
+      clip-path: circle(42px at 40px 40px); 
+      pointer-events: none;
+    }
 
-    /* 3. 新增隱形軌道：避開左邊徽章與四周金邊 */
     .progress-track {
       position: absolute;
-      /* 這裡的數值是關鍵：請根據你的圖片微調，確保進度條剛好卡在灰色區域 */
-      left: 90px;  /* 避開左側圓形花紋徽章的距離 */
-      right: 5px;  /* 避開右側金邊 */
-      top: 5px;    /* 避開上方金邊 */
-      bottom: 5px; /* 避開下方金邊 */
       
-      border-radius: 4px; /* 如果灰色區域有微小圓角可以加這個 */
-      overflow: hidden;   /* 確保裡面的顏色不會溢出軌道 */
-      z-index: 1;
+      /* 讓進度條從徽章的「圓心」開始，這樣露出來的部分就會像從底下鑽出來的 */
+      left: 40px; 
+      
+      /* 這些數值是為了讓進度條「縮進」灰色內框中，請根據圖片邊界微調 */
+      right: 12px; 
+      top: 18px;   
+      bottom: 18px;
+      
+      border-radius: 4px; 
+      overflow: hidden;
+      z-index: 1; /* 夾在底圖(0)跟徽章遮罩(2)的中間 */
     }
 
     .progress-fill {
@@ -106,17 +117,17 @@
       transition: width 0.9s cubic-bezier(0.22,1,0.36,1);
     }
 
+    /* 文字排版：確保 z-index 最高，且左邊推開距離避開徽章 */
     .content {
       position: relative;
-      z-index: 2; /* 確保文字在進度條上方 */
+      z-index: 3; /* 最頂層，不會被徽章或進度條蓋住 */
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
       
-      /* 文字排版：左邊要多推一點空間，避開圓形徽章 */
-      padding-left: 105px; 
-      padding-right: 20px;
+      padding-left: 95px; /* 把文字往右推，避開徽章 */
+      padding-right: 24px;
     }
 
     .left {
@@ -126,28 +137,28 @@
     }
 
     .label {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-color);
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
     }
 
     .goal-text {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
       color: var(--text-color);
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
     }
 
     .percent {
       font-size: 18px;
       font-weight: 700;
       color: var(--text-color);
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
     }
-
+    
       box-shadow:
         0 8px 30px rgba(0,0,0,0.35);
 
