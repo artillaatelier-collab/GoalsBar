@@ -16,19 +16,17 @@
 
   <style>
     :root {
-      --overlay-width: 720px;
-      --overlay-height: 82px;
+  /* 調整為你的圖片寬高比例 */
+      --overlay-width: 800px;
+      --overlay-height: 80px;
 
-      --overlay-bg: rgba(12,12,18,0.72);
+  /* 指向你剛才存的圖片檔名 */
+      --bg-image: url('./bg-overlay.png'); 
+
+      --overlay-bg: rgba(12,12,18,0.72); /* 介面保留，但 overlay 將不再使用 */
       --text-color: #ffffff;
-
-      --progress-color:
-        linear-gradient(
-          90deg,
-          #8b5cf6 0%,
-          #ec4899 100%
-        );
-    }
+      --progress-color: linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%);
+     }
 
     * {
       box-sizing: border-box;
@@ -67,13 +65,88 @@
       width: var(--overlay-width);
       height: var(--overlay-height);
 
-      border-radius: 24px;
-      overflow: hidden;
+      /* 1. 套用自定義圖片為背景 */
+      background-image: var(--bg-image);
+      background-size: 100% 100%;
+      background-position: center;
+      background-repeat: no-repeat;
 
-      border:
-        1px solid rgba(255,255,255,0.15);
+/* 2. 移除原本的玻璃邊框與陰影 */
+      background-color: transparent;
+      border: none;
+      box-shadow: none;
+      backdrop-filter: none;
+      border-radius: 0;
+    }
 
-      background: var(--overlay-bg);
+    /* 移除原本的漸層遮罩 */
+    .overlay::before { display: none; }
+
+    /* 3. 新增隱形軌道：避開左邊徽章與四周金邊 */
+    .progress-track {
+      position: absolute;
+      /* 這裡的數值是關鍵：請根據你的圖片微調，確保進度條剛好卡在灰色區域 */
+      left: 90px;  /* 避開左側圓形花紋徽章的距離 */
+      right: 5px;  /* 避開右側金邊 */
+      top: 5px;    /* 避開上方金邊 */
+      bottom: 5px; /* 避開下方金邊 */
+      
+      border-radius: 4px; /* 如果灰色區域有微小圓角可以加這個 */
+      overflow: hidden;   /* 確保裡面的顏色不會溢出軌道 */
+      z-index: 1;
+    }
+
+    .progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 0%; /* 這個會被 JS 自動控制 */
+      background: var(--progress-color);
+      transition: width 0.9s cubic-bezier(0.22,1,0.36,1);
+    }
+
+    .content {
+      position: relative;
+      z-index: 2; /* 確保文字在進度條上方 */
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      
+      /* 文字排版：左邊要多推一點空間，避開圓形徽章 */
+      padding-left: 105px; 
+      padding-right: 20px;
+    }
+
+    .left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-color);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    .goal-text {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-color);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    .percent {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-color);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
 
       box-shadow:
         0 8px 30px rgba(0,0,0,0.35);
@@ -768,37 +841,20 @@
   <!-- OVERLAY -->
   <div class="overlay-wrap">
 
-    <div
-      class="overlay"
-      id="overlay"
-    >
-
-      <div
-        class="progress-fill"
-        id="progressFill"
-      ></div>
-
-      <div class="content">
-
-        <div class="left">
-          <div
-            class="label"
-            id="labelText"
-          ></div>
-
-          <div
-            class="goal-text"
-            id="goalText"
-          ></div>
-        </div>
-
-        <div
-          class="percent"
-          id="percentText"
-        ></div>
-
+<div class="overlay" id="overlay">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
       </div>
 
+      <div class="content">
+        <div class="left">
+          <div class="label" id="labelText"></div>
+          <div class="goal-text" id="goalText"></div>
+        </div>
+        <div class="percent" id="percentText"></div>
+        
+      </div>
+  
     </div>
 
   </div>
