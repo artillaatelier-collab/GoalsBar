@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Twitch Follower Goal Overlay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Follower Goal Overlay — Wave Tip Demo</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,12 +11,18 @@
 
   <style>
     :root {
+      --progress: 0%;
+
       --overlay-width: 800px;
       --overlay-height: 80px;
       --bg-image: url('./bg-overlay.png');
       --overlay-bg: rgba(12,12,18,0.72);
+      --track-bg: #595959;
       --text-color: #ffffff;
       --progress-color: linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%);
+
+      --wave-width: 22px;
+      --wave-period: 40px;
     }
 
     * { box-sizing: border-box; }
@@ -55,6 +61,7 @@
       border-radius: 0;
     }
 
+    /* Re-render the badge area in front so it sits over the track. */
     .overlay::after {
       content: "";
       position: absolute;
@@ -75,41 +82,56 @@
       bottom: 18px;
       border-radius: 4px;
       overflow: hidden;
+      background: var(--track-bg);
       z-index: 1;
-      background: rgba(0,0,0,0.2); /* Slight track visibility */
     }
 
+    /* Plain rectangle — no shaping/clipping on the fill itself. */
     .progress-fill {
       position: absolute;
       left: 0;
       top: 0;
       height: 100%;
-      width: 0%;
+      width: var(--progress);
       background: var(--progress-color);
       transition: width 0.9s cubic-bezier(0.22,1,0.36,1);
-      overflow: hidden; /* Clips the waves */
     }
 
-    /* ── VERTICAL WAVE CAP AT THE END ── */
-    .progress-fill::after {
-      content: "";
+    /* Track-coloured overlay sitting at the fill tip with a wavy left edge.
+       Opaque colour matches the empty track exactly, so the masked region
+       reads as the track continuing past the fill. */
+    .progress-wave {
+      --wave-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 40' preserveAspectRatio='none'><path d='M 11,0 Q 15,10 11,20 T 11,40 L 22,40 L 22,0 Z' fill='white'/></svg>");
+
       position: absolute;
-      top: -10%; /* Slightly taller than bar */
-      right: -8px; /* Positioned at the leading edge */
-      width: 20px;
-      height: 120%;
-      /* This uses the "End" color of your gradient to look like liquid spray */
-      background-color: var(--end-color);
-      mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 100" preserveAspectRatio="none"><path d="M20,0 C10,0 10,12.5 0,12.5 C10,12.5 10,25 20,25 C10,25 10,37.5 0,37.5 C10,37.5 10,50 20,50 C10,50 10,62.5 0,62.5 C10,62.5 10,75 20,75 C10,75 10,87.5 0,87.5 C10,87.5 10,100 20,100 Z" fill="black"/></svg>');
-      mask-size: 100% 40px; /* Controls wave frequency */
-      -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 100" preserveAspectRatio="none"><path d="M20,0 C10,0 10,12.5 0,12.5 C10,12.5 10,25 20,25 C10,25 10,37.5 0,37.5 C10,37.5 10,50 20,50 C10,50 10,62.5 0,62.5 C10,62.5 10,75 20,75 C10,75 10,87.5 0,87.5 C10,87.5 10,100 20,100 Z" fill="black"/></svg>');
-      -webkit-mask-size: 100% 40px;
-      animation: wave-move-vert 1s linear infinite;
+      top: 0;
+      left: var(--progress);
+      height: 100%;
+      width: var(--wave-width);
+      margin-left: calc(var(--wave-width) * -1);
+      background: var(--track-bg);
+
+      mask-image: var(--wave-svg);
+      -webkit-mask-image: var(--wave-svg);
+      mask-size: 100% var(--wave-period);
+      -webkit-mask-size: 100% var(--wave-period);
+      mask-repeat: repeat-y;
+      -webkit-mask-repeat: repeat-y;
+
+      animation: wave-shift 1.1s linear infinite;
+      transition: left 0.9s cubic-bezier(0.22,1,0.36,1), opacity 0.5s ease;
+      pointer-events: none;
     }
 
-    @keyframes wave-move-vert {
-      0% { mask-position: 0 0; -webkit-mask-position: 0 0; }
-      100% { mask-position: 0 40px; -webkit-mask-position: 0 40px; }
+    @keyframes wave-shift {
+      from { mask-position-y: 0;                  -webkit-mask-position-y: 0; }
+      to   { mask-position-y: var(--wave-period); -webkit-mask-position-y: var(--wave-period); }
+    }
+
+    .overlay.is-complete .progress-wave { opacity: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .progress-wave { animation: none; }
     }
 
     .content {
@@ -123,11 +145,7 @@
       padding-right: 24px;
     }
 
-    .left {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
+    .left { display: flex; flex-direction: column; gap: 2px; }
 
     .label {
       font-size: 13px;
@@ -152,7 +170,7 @@
       text-shadow: 0 2px 6px rgba(0,0,0,0.9);
     }
 
-    /* ── STATUS DOT (OBS debug helper) ── */
+    /* ── STATUS DOT ── */
     #statusDot {
       position: fixed;
       bottom: 8px;
@@ -221,17 +239,8 @@
 
     .row { display: flex; gap: 10px; }
 
-    .color-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-    }
-
-    .color-control {
-      flex: 1;
-      min-width: 0;
-    }
-
+    .color-row { display: flex; align-items: flex-start; gap: 10px; }
+    .color-control { flex: 1; min-width: 0; }
     .hex-input { margin-top: 10px; text-transform: uppercase; }
 
     .picker-panel {
@@ -259,18 +268,8 @@
       pointer-events: none;
     }
 
-    .picker-meta {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .picker-meta label {
-      margin: 0;
-      font-size: 12px;
-      color: rgba(255,255,255,0.65);
-    }
+    .picker-meta { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    .picker-meta label { margin: 0; font-size: 12px; color: rgba(255,255,255,0.65); }
 
     .hue-slider {
       flex: 1;
@@ -286,75 +285,34 @@
         #00ffff 50%, #0000ff 66.66%, #ff00ff 83.33%, #ff0000 100%
       );
     }
-
-    .hue-slider::-webkit-slider-runnable-track {
-      height: 14px;
-      border-radius: 999px;
-      background: var(--hue-gradient);
-    }
-
-    .hue-slider::-moz-range-track {
-      height: 14px;
-      border-radius: 999px;
-      border: none;
-      background: var(--hue-gradient);
-    }
-
+    .hue-slider::-webkit-slider-runnable-track { height: 14px; border-radius: 999px; background: var(--hue-gradient); }
+    .hue-slider::-moz-range-track            { height: 14px; border-radius: 999px; border: none; background: var(--hue-gradient); }
     .hue-slider::-webkit-slider-thumb {
       appearance: none;
-      width: 20px;
-      height: 20px;
-      border: 3px solid white;
-      border-radius: 50%;
+      width: 20px; height: 20px;
+      border: 3px solid white; border-radius: 50%;
       background: var(--hue-color, #ff0000);
       box-shadow: 0 2px 8px rgba(0,0,0,0.35);
       cursor: pointer;
     }
-
     .hue-slider::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
-      border: 3px solid white;
-      border-radius: 50%;
+      width: 20px; height: 20px;
+      border: 3px solid white; border-radius: 50%;
       background: var(--hue-color, #ff0000);
       box-shadow: 0 2px 8px rgba(0,0,0,0.35);
       cursor: pointer;
     }
+    .hue-value { min-width: 48px; text-align: right; font-size: 12px; color: rgba(255,255,255,0.7); }
 
-    .hue-value {
-      min-width: 48px;
-      text-align: right;
-      font-size: 12px;
-      color: rgba(255,255,255,0.7);
-    }
+    .picker-readout { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; }
+    .picker-readout span { font-size: 11px; color: rgba(255,255,255,0.58); }
+    .picker-readout output { margin-left: 4px; color: rgba(255,255,255,0.78); }
 
-    .picker-readout {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      margin-top: 8px;
-    }
-
-    .picker-readout span {
-      font-size: 11px;
-      color: rgba(255,255,255,0.58);
-    }
-
-    .picker-readout output {
-      margin-left: 4px;
-      color: rgba(255,255,255,0.78);
-    }
-
-    .range-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .range-wrap { display: flex; align-items: center; gap: 8px; }
+    .range-wrap output { min-width: 44px; text-align: right; font-size: 12px; color: rgba(255,255,255,0.7); }
 
     .color-chip {
-      width: 42px;
-      height: 42px;
-      flex: 0 0 42px;
+      width: 42px; height: 42px; flex: 0 0 42px;
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,0.12);
       background-image:
@@ -366,20 +324,9 @@
       background-position: 0 0, 0 8px, 8px -8px, -8px 0;
       overflow: hidden;
     }
-
     .color-chip::after {
-      content: "";
-      display: block;
-      width: 100%;
-      height: 100%;
+      content: ""; display: block; width: 100%; height: 100%;
       background: var(--chip-color, transparent);
-    }
-
-    .range-wrap output {
-      min-width: 44px;
-      text-align: right;
-      font-size: 12px;
-      color: rgba(255,255,255,0.7);
     }
 
     .btn {
@@ -411,11 +358,9 @@
 
     .toggle-btn {
       position: fixed;
-      top: 20px;
-      left: 20px;
+      top: 20px; left: 20px;
       z-index: 10000;
-      border: none;
-      cursor: pointer;
+      border: none; cursor: pointer;
       padding: 10px 14px;
       border-radius: 12px;
       background: rgba(20,20,25,0.85);
@@ -428,6 +373,18 @@
 
     body.obs-mode .settings,
     body.obs-mode .toggle-btn { display: none; }
+
+    .debug-field {
+      margin-top: 6px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(255,255,255,0.12);
+    }
+    .debug-field label .debug-hint {
+      font-weight: 500;
+      opacity: 0.55;
+      margin-left: 6px;
+    }
+    body.obs-mode .debug-field { display: none; }
   </style>
 </head>
 
@@ -435,7 +392,7 @@
 
   <button class="toggle-btn" onclick="toggleSettings()">⚙ Settings</button>
 
-  <div id="statusDot">⏳ connecting…</div>
+  <div id="statusDot">⏳ starting…</div>
 
   <div class="settings" id="settingsPanel">
     <h2>Follower Goal Settings</h2>
@@ -455,6 +412,14 @@
     <div class="field">
       <label>Suffix</label>
       <input id="suffixInput" type="text">
+    </div>
+
+    <div class="field debug-field">
+      <label>
+        Debug: Override Current
+        <span class="debug-hint">empty = simulate</span>
+      </label>
+      <input id="currentOverrideInput" type="number" placeholder="e.g. 250">
     </div>
 
     <!-- Background Color -->
@@ -563,8 +528,8 @@
     <div class="hint">
       All settings are saved in browser localStorage.<br><br>
       Press <b>F2</b> to hide/show the settings panel.<br><br>
-      Add <b>?obs</b> to the URL in OBS Browser Source to hide the settings panel.<br><br>
-      The overlay polls your Cloudflare Worker every <b>30 seconds</b> automatically.
+      Add <b>?obs</b> to the URL in OBS Browser Source to hide debug UI.<br><br>
+      The overlay polls your Cloudflare Worker every <b>30 seconds</b> automatically. Set <b>Override Current</b> to freeze the bar at any value while debugging.
     </div>
   </div>
 
@@ -572,7 +537,8 @@
   <div class="overlay-wrap">
     <div class="overlay" id="overlay">
       <div class="progress-track">
-        <div class="progress-fill" id="progressFill"></div>
+        <div class="progress-fill"></div>
+        <div class="progress-wave"></div>
       </div>
       <div class="content">
         <div class="left">
@@ -587,14 +553,14 @@
   <script>
     const WORKER_URL = "https://goals-bar.artillaatelier.workers.dev/";
     const POLL_INTERVAL_MS = 30_000;
+    const STORAGE_KEY = "followerGoalSettings.wave";
 
     const DEFAULTS = {
       label: "FOLLOWER GOAL",
       goal: 500,
       suffix: "Followers",
-      current: 0,
       backgroundColor: "#0c0c12",
-      backgroundOpacity: 72,
+      backgroundOpacity: 95,
       textColor: "#ffffff",
       progressStartColor: "#8b5cf6",
       progressEndColor: "#ec4899"
@@ -602,36 +568,45 @@
 
     let settings = {
       ...DEFAULTS,
-      ...JSON.parse(localStorage.getItem("followerGoalSettings") || "{}")
+      ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}")
     };
 
-    settings.current = 0;
+    let current = 0;
+    let override = null;
 
-    let syncBgColorControl = function() {};
-    let syncTextColorControl = function() {};
+    let syncBgColorControl       = function() {};
+    let syncTextColorControl     = function() {};
     let syncProgressStartControl = function() {};
-    let syncProgressEndControl = function() {};
+    let syncProgressEndControl   = function() {};
 
     if (window.location.search.includes("obs")) {
       document.body.classList.add("obs-mode");
     }
 
+    const overlay     = document.getElementById("overlay");
+    const labelText   = document.getElementById("labelText");
+    const goalText    = document.getElementById("goalText");
+    const percentText = document.getElementById("percentText");
+    const statusDot   = document.getElementById("statusDot");
+
     function renderOverlay() {
-      const current = isNaN(Number(settings.current)) ? 0 : Number(settings.current);
+      const value   = override !== null ? override : current;
       const goal    = Number(settings.goal ?? 1) || 1;
-      const percent = Math.min((current / goal) * 100, 100);
+      const percent = Math.min(100, Math.max(0, (value / goal) * 100));
 
       const bgColor  = hexToRgba(settings.backgroundColor, settings.backgroundOpacity / 100);
       const gradient = `linear-gradient(90deg, ${settings.progressStartColor} 0%, ${settings.progressEndColor} 100%)`;
 
-      document.getElementById("labelText").textContent   = settings.label;
-      document.getElementById("goalText").textContent    = `${current} / ${settings.goal} ${settings.suffix}`;
-      document.getElementById("percentText").textContent = `${Math.round(percent)}%`;
-      document.getElementById("progressFill").style.width = `${percent}%`;
+      labelText.textContent   = settings.label;
+      goalText.textContent    = `${Math.round(value)} / ${settings.goal} ${settings.suffix}`;
+      percentText.textContent = `${Math.round(percent)}%`;
 
-      document.documentElement.style.setProperty("--overlay-bg",      bgColor);
-      document.documentElement.style.setProperty("--text-color",      settings.textColor);
-      document.documentElement.style.setProperty("--progress-color",  gradient);
+      overlay.style.setProperty("--progress", percent + "%");
+      overlay.classList.toggle("is-complete", percent >= 100);
+
+      document.documentElement.style.setProperty("--overlay-bg",     bgColor);
+      document.documentElement.style.setProperty("--text-color",     settings.textColor);
+      document.documentElement.style.setProperty("--progress-color", gradient);
 
       syncColorPreviews();
     }
@@ -645,42 +620,33 @@
       syncColorPreviews();
     }
 
+    /* ── Colour utilities ── */
     function normalizeHexColor(color) {
       return /^#[0-9a-f]{6}$/i.test(color) ? color : "#ffffff";
     }
-
     function hexToRgb(hex) {
       const n = normalizeHexColor(hex).slice(1);
-      return {
-        red:   parseInt(n.slice(0,2), 16),
-        green: parseInt(n.slice(2,4), 16),
-        blue:  parseInt(n.slice(4,6), 16)
-      };
+      return { red: parseInt(n.slice(0,2),16), green: parseInt(n.slice(2,4),16), blue: parseInt(n.slice(4,6),16) };
     }
-
     function clampByte(v) { return Math.max(0, Math.min(255, Number(v) || 0)); }
-
-    function rgbToHex(r, g, b) {
+    function rgbToHex(r,g,b) {
       return `#${[r,g,b].map(v => clampByte(v).toString(16).padStart(2,"0")).join("")}`;
     }
-
-    function rgbToHsv(r, g, b) {
-      const rv = clampByte(r)/255, gv = clampByte(g)/255, bv = clampByte(b)/255;
-      const max = Math.max(rv,gv,bv), min = Math.min(rv,gv,bv), d = max - min;
-      let h = 0;
+    function rgbToHsv(r,g,b) {
+      const rv=clampByte(r)/255, gv=clampByte(g)/255, bv=clampByte(b)/255;
+      const max=Math.max(rv,gv,bv), min=Math.min(rv,gv,bv), d=max-min;
+      let h=0;
       if (d !== 0) {
-        if      (max === rv) h = ((gv-bv)/d) % 6;
-        else if (max === gv) h = (bv-rv)/d + 2;
-        else                 h = (rv-gv)/d + 4;
+        if      (max===rv) h=((gv-bv)/d)%6;
+        else if (max===gv) h=(bv-rv)/d+2;
+        else               h=(rv-gv)/d+4;
       }
-      h = Math.round(h*60);
-      if (h < 0) h += 360;
-      return { hue: h, saturation: max===0 ? 0 : d/max, value: max };
+      h=Math.round(h*60); if (h<0) h+=360;
+      return { hue:h, saturation: max===0?0:d/max, value:max };
     }
-
-    function hsvToRgb(h, s, v) {
-      const hn = ((Number(h)%360)+360)%360;
-      const c = v*s, seg = hn/60, x = c*(1-Math.abs((seg%2)-1)), m = v-c;
+    function hsvToRgb(h,s,v) {
+      const hn=((Number(h)%360)+360)%360;
+      const c=v*s, seg=hn/60, x=c*(1-Math.abs((seg%2)-1)), m=v-c;
       let r=0,g=0,b=0;
       if      (seg<1){r=c;g=x}
       else if (seg<2){r=x;g=c}
@@ -690,20 +656,20 @@
       else           {r=c;b=x}
       return { red:Math.round((r+m)*255), green:Math.round((g+m)*255), blue:Math.round((b+m)*255) };
     }
-
     function hexToRgba(hex, alpha) {
       const {red,green,blue} = hexToRgb(hex);
       return `rgba(${red},${green},${blue},${alpha.toFixed(2)})`;
     }
 
+    /* ── Colour-picker binding (HSV panel + hue slider + hex input) ── */
     function bindColorControl(cfg) {
-      const hexInput  = document.getElementById(cfg.hexInputId);
-      const panel     = document.getElementById(cfg.panelId);
-      const thumb     = document.getElementById(cfg.thumbId);
-      const hueInput  = document.getElementById(cfg.hueInputId);
-      const hueValue  = document.getElementById(cfg.hueValueId);
-      const satValue  = document.getElementById(cfg.saturationValueId);
-      const briValue  = document.getElementById(cfg.brightnessValueId);
+      const hexInput = document.getElementById(cfg.hexInputId);
+      const panel    = document.getElementById(cfg.panelId);
+      const thumb    = document.getElementById(cfg.thumbId);
+      const hueInput = document.getElementById(cfg.hueInputId);
+      const hueValue = document.getElementById(cfg.hueValueId);
+      const satValue = document.getElementById(cfg.saturationValueId);
+      const briValue = document.getElementById(cfg.brightnessValueId);
 
       const state = { hue:0, saturation:0, value:1 };
 
@@ -714,14 +680,14 @@
         state.saturation = hsv.saturation;
         state.value      = hsv.value;
 
-        hexInput.value      = settings[cfg.settingKey].toUpperCase();
-        hueInput.value      = Math.round(state.hue);
-        hueValue.value      = `${Math.round(state.hue)}deg`;
-        satValue.value      = `${Math.round(state.saturation*100)}%`;
-        briValue.value      = `${Math.round(state.value*100)}%`;
+        hexInput.value = settings[cfg.settingKey].toUpperCase();
+        hueInput.value = Math.round(state.hue);
+        hueValue.value = `${Math.round(state.hue)}deg`;
+        satValue.value = `${Math.round(state.saturation*100)}%`;
+        briValue.value = `${Math.round(state.value*100)}%`;
 
-        const base      = hsvToRgb(state.hue,1,1);
-        const hueColor  = rgbToHex(base.red,base.green,base.blue);
+        const base     = hsvToRgb(state.hue,1,1);
+        const hueColor = rgbToHex(base.red,base.green,base.blue);
         panel.style.backgroundColor = hueColor;
         hueInput.style.setProperty("--hue-color", hueColor);
         thumb.style.left = `${state.saturation*100}%`;
@@ -735,7 +701,7 @@
       }
 
       function updateFromPanel(e) {
-        const b  = panel.getBoundingClientRect();
+        const b = panel.getBoundingClientRect();
         state.saturation = Math.min(1, Math.max(0, (e.clientX-b.left)/b.width));
         state.value      = 1 - Math.min(1, Math.max(0, (e.clientY-b.top)/b.height));
         commitFromState();
@@ -755,9 +721,9 @@
     }
 
     syncBgColorControl       = bindColorControl({ settingKey:"backgroundColor",    panelId:"bgColorPanel",       thumbId:"bgColorThumb",       hexInputId:"bgColorHexInput",       hueInputId:"bgColorHueInput",       hueValueId:"bgColorHueValue",       saturationValueId:"bgColorSaturationValue",       brightnessValueId:"bgColorBrightnessValue" });
-    syncTextColorControl     = bindColorControl({ settingKey:"textColor",           panelId:"textColorPanel",     thumbId:"textColorThumb",     hexInputId:"textColorHexInput",     hueInputId:"textColorHueInput",     hueValueId:"textColorHueValue",     saturationValueId:"textColorSaturationValue",     brightnessValueId:"textColorBrightnessValue" });
-    syncProgressStartControl = bindColorControl({ settingKey:"progressStartColor",  panelId:"progressStartPanel", thumbId:"progressStartThumb", hexInputId:"progressStartHexInput", hueInputId:"progressStartHueInput", hueValueId:"progressStartHueValue", saturationValueId:"progressStartSaturationValue", brightnessValueId:"progressStartBrightnessValue" });
-    syncProgressEndControl   = bindColorControl({ settingKey:"progressEndColor",    panelId:"progressEndPanel",   thumbId:"progressEndThumb",   hexInputId:"progressEndHexInput",   hueInputId:"progressEndHueInput",   hueValueId:"progressEndHueValue",   saturationValueId:"progressEndSaturationValue",   brightnessValueId:"progressEndBrightnessValue" });
+    syncTextColorControl     = bindColorControl({ settingKey:"textColor",          panelId:"textColorPanel",     thumbId:"textColorThumb",     hexInputId:"textColorHexInput",     hueInputId:"textColorHueInput",     hueValueId:"textColorHueValue",     saturationValueId:"textColorSaturationValue",     brightnessValueId:"textColorBrightnessValue" });
+    syncProgressStartControl = bindColorControl({ settingKey:"progressStartColor", panelId:"progressStartPanel", thumbId:"progressStartThumb", hexInputId:"progressStartHexInput", hueInputId:"progressStartHueInput", hueValueId:"progressStartHueValue", saturationValueId:"progressStartSaturationValue", brightnessValueId:"progressStartBrightnessValue" });
+    syncProgressEndControl   = bindColorControl({ settingKey:"progressEndColor",   panelId:"progressEndPanel",   thumbId:"progressEndThumb",   hexInputId:"progressEndHexInput",   hueInputId:"progressEndHueInput",   hueValueId:"progressEndHueValue",   saturationValueId:"progressEndSaturationValue",   brightnessValueId:"progressEndBrightnessValue" });
 
     function syncColorPreviews() {
       document.getElementById("bgColorPreview").style.setProperty("--chip-color", hexToRgba(settings.backgroundColor, settings.backgroundOpacity/100));
@@ -776,6 +742,66 @@
       renderOverlay();
     });
 
+    document.getElementById("labelInput").addEventListener("input", function() {
+      settings.label = this.value;
+      renderOverlay();
+    });
+    document.getElementById("suffixInput").addEventListener("input", function() {
+      settings.suffix = this.value;
+      renderOverlay();
+    });
+    document.getElementById("goalInput").addEventListener("input", function() {
+      const n = Number(this.value);
+      if (!Number.isFinite(n) || n <= 0) return;
+      settings.goal = n;
+      renderOverlay();
+    });
+
+    /* ── Debug override ── */
+    const overrideInput = document.getElementById("currentOverrideInput");
+    overrideInput.addEventListener("input", function() {
+      const raw = this.value.trim();
+      if (raw === "") {
+        override = null;
+        statusDot.textContent = "⏳ override cleared, refetching…";
+        fetchFollowerCount();
+        return;
+      }
+      const n = Number(raw);
+      if (!Number.isFinite(n)) return;
+      override = n;
+      renderOverlay();
+      statusDot.textContent = `🐛 override: ${n}`;
+    });
+
+    /* ── Worker fetch ── */
+    async function fetchFollowerCount() {
+      if (override !== null) {
+        renderOverlay();
+        statusDot.textContent = `🐛 override: ${override}`;
+        return;
+      }
+      statusDot.textContent = "⏳ fetching…";
+      try {
+        const res = await fetch(WORKER_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (typeof data.followers === "number" || typeof data.followers === "string") {
+          current = Number(data.followers);
+          renderOverlay();
+          const now = new Date().toLocaleTimeString();
+          statusDot.textContent = `✅ ${current} followers · ${now}`;
+        } else {
+          statusDot.textContent = `⚠ unexpected: ${JSON.stringify(data).slice(0,60)}`;
+          console.warn("Unexpected Worker response:", data);
+        }
+      } catch (err) {
+        statusDot.textContent = `❌ ${err.message}`;
+        console.error("Worker fetch failed:", err);
+      }
+    }
+
     document.addEventListener("keydown", function(e) {
       if (e.key !== "F2") return;
       if (document.body.classList.contains("obs-mode")) return;
@@ -784,12 +810,17 @@
     });
 
     function saveSettings() {
-      settings.label             = document.getElementById("labelInput").value;
-      settings.goal              = Number(document.getElementById("goalInput").value);
-      settings.suffix            = document.getElementById("suffixInput").value;
-      settings.backgroundOpacity = Number(document.getElementById("bgOpacityInput").value);
-
-      localStorage.setItem("followerGoalSettings", JSON.stringify(settings));
+      const persisted = {
+        label: settings.label,
+        goal: settings.goal,
+        suffix: settings.suffix,
+        backgroundColor: settings.backgroundColor,
+        backgroundOpacity: settings.backgroundOpacity,
+        textColor: settings.textColor,
+        progressStartColor: settings.progressStartColor,
+        progressEndColor: settings.progressEndColor
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
       renderOverlay();
 
       const el = document.getElementById("saveStatus");
@@ -800,30 +831,6 @@
 
     function toggleSettings() {
       document.body.classList.toggle("ui-hidden");
-    }
-
-    const statusDot = document.getElementById("statusDot");
-
-    async function fetchFollowerCount() {
-      statusDot.textContent = "⏳ fetching…";
-      try {
-        const res  = await fetch(WORKER_URL, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-
-        if (typeof data.followers === "number" || typeof data.followers === "string") {
-          settings.current = Number(data.followers);
-          renderOverlay();
-          const now = new Date().toLocaleTimeString();
-          statusDot.textContent = `✅ ${settings.current} followers · ${now}`;
-        } else {
-          statusDot.textContent = `⚠ unexpected: ${JSON.stringify(data).slice(0,60)}`;
-          console.warn("Unexpected Worker response:", data);
-        }
-      } catch (err) {
-        statusDot.textContent = `❌ ${err.message}`;
-        console.error("Worker fetch failed:", err);
-      }
     }
 
     populateInputs();
